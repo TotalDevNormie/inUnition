@@ -1,11 +1,15 @@
 import { Stack } from 'expo-router/stack';
 import '../global.css';
-import { View } from 'react-native-web';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
-export default Index = () => {
+export default Layout = () => {
     return (
-        <Stack>
-            <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+        <Stack
+            screenOptions={{
+                headerShown: false,
+            }}
+        >
+            <Stack.Screen name="(tabs)" />
         </Stack>
     );
 }
