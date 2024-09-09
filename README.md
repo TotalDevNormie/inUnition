@@ -1,6 +1,7 @@
-# InUnition
-
 # ![InUnition Logo](frontend/assets/DarkLogoFull.svg)
+
+<img src="frontend/assets/DarkLogoFull.svg" alt="inUnition Logo"height="300">
+
 
 InUnition is a note taking app for the web and mobile devices. It allows users to create, edit, and delete notes, as well as organize them by tags.
 
