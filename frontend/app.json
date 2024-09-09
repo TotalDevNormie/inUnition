@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "SeamNote",
-    "slug": "seam-note",
-    "scheme": "seam-note",
+    "name": "inUnition",
+    "slug": "inunition",
+    "scheme": "inunition",
     "version": "1.0.0",
     "orientation": "portrait",
-    "userInterfaceStyle": "light",
+    "userInterfaceStyle": "dark",
     "splash": {
       "resizeMode": "contain",
       "backgroundColor": "#ffffff"
