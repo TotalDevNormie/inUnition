@@ -15,7 +15,6 @@ As of now it is in development.
 - [] login / register page
 - [] offline first login
 
-
 ### Backend
 - [] Add tags
 - [] Add search
