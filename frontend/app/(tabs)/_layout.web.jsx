@@ -1,8 +1,9 @@
-import { View } from "react-native";
+import { Pressable, useColorScheme, View } from "react-native";
 import { TabRouter } from "@react-navigation/native";
-import { Navigator, usePathname, Slot, Link } from "expo-router";
+import { Navigator, usePathname, Slot } from "expo-router";
 import NavLink from "../../components/NavLink";
-import { Ionicons } from "@expo/vector-icons";
+import { Ionicons, MaterialIcons, Octicons } from "@expo/vector-icons";
+import DarkLogoFull from "../../assets/DarkLogoFull.svg";
 
 export default function WebLayout() {
   return (
@@ -19,16 +20,33 @@ export default function WebLayout() {
   );
 }
 
-function Header() {
+const Header = () => {
   const { navigation, state, descriptors, router } = Navigator.useContext();
+  const theme = useColorScheme();
 
   const pathname = usePathname();
 
   return (
-    <View className="flex align-middle p-2 rounded-lg bg-background-100">
-      <NavLink href="./" icon={<Ionicons name="home" size={20} />}>Home</NavLink>
-      <NavLink href="./notes" icon={<Ionicons name="document-text" size={20}/>}>Your Notes</NavLink>
-      <NavLink href="./tasks" icon={<Ionicons name="document-text" size={20}/>}>Task Manegment</NavLink>
+    <View className="flex align-middle px-4 py-2 rounded-lg bg-background-100">
+      <View className="flex flex-col gap-2">
+        <View className="flex flex-row justify-between">
+
+          <DarkLogoFull width={"100%"} className="text-3xl" />
+          <Pressable className="flex justify-end">
+            <MaterialIcons name="keyboard-arrow-right" size={24} className="color-text" />
+          </Pressable>
+        </View>
+        <Hr />
+        <NavLink href="./" icon={<Ionicons name="home" size={24} />}>Home</NavLink>
+        <NavLink href="./notes" icon={<Ionicons name="document-text" size={24} />}>Your Notes</NavLink>
+        <NavLink href="./tasks" icon={<Octicons name="tasklist" size={24} />}>Task Manegment</NavLink>
+        <Hr />
+      </View>
+
     </View>
   );
+}
+
+const Hr = () => {
+  return <View className="w-full h-[2px] bg-background-200" />
 }
