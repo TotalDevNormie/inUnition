@@ -1,5 +1,7 @@
 import 'ts-node/register'; // Add this to import TypeScript files
 import { ExpoConfig } from 'expo/config';
+import { useColorScheme } from 'react-native';
+// const colorScheme = useColorScheme();
 
 const config: ExpoConfig ={
     name: 'inUnition',
@@ -22,6 +24,7 @@ const config: ExpoConfig ={
     },
     web: {
       bundler: 'metro',
+      favicon: './assets/images.png',
     },
     plugins: [
       'expo-router',

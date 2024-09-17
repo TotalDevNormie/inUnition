@@ -3,7 +3,7 @@ import { TabRouter } from "@react-navigation/native";
 import { Navigator, usePathname, Slot } from "expo-router";
 import NavLink from "../../components/NavLink";
 import { Ionicons, MaterialIcons, Octicons } from "@expo/vector-icons";
-import DarkLogoFull from "../../assets/DarkLogoFull.svg";
+import DarkLogoFull from "../../assets/darkLogoFull.svg";
 
 export default function WebLayout() {
   return (

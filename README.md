@@ -11,11 +11,11 @@ As of now it is in development.
 
 ### Frontend
 
-- [] web sidebar
-- [] login / register page
-- [] offline first login
+- [ ] web sidebar
+- [x] login / register page
+- [ ] offline first login
 
 ### Backend
-- [] Add tags
-- [] Add search
-- [] Add authentication system
+- [ ] Add tags
+- [ ] Add search
+- [x] Add authentication system
