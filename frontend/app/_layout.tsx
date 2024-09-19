@@ -16,7 +16,7 @@ const queryClient = new QueryClient({
     }
 });
 
-export default Layout = () => {
+export default function Layout () {
     return (
         <QueryClientProvider client={queryClient}>
             <AuthProvider>

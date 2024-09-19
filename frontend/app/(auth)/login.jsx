@@ -7,7 +7,6 @@ export default Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const { data, error, isLoading, mutate } = loginMutation;
-  console.log({ data, error, isLoading });
 
 
   const handleLogin = () => {
