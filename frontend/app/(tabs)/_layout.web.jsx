@@ -1,9 +1,10 @@
-import { Pressable, useColorScheme, View } from "react-native";
+import { Pressable, Text, useColorScheme, View } from "react-native";
 import { TabRouter } from "@react-navigation/native";
 import { Navigator, usePathname, Slot } from "expo-router";
 import NavLink from "../../components/NavLink";
-import { Ionicons, MaterialIcons, Octicons } from "@expo/vector-icons";
+import { Feather, Ionicons, MaterialIcons, Octicons } from "@expo/vector-icons";
 import DarkLogoFull from "../../assets/darkLogoFull.svg";
+import { useAuth } from "../../components/auth/authContext";
 
 export default function WebLayout() {
   return (
@@ -23,11 +24,13 @@ export default function WebLayout() {
 const Header = () => {
   const { navigation, state, descriptors, router } = Navigator.useContext();
   const theme = useColorScheme();
+  const { user, isLoadingUser } = useAuth();
+  console.log(user);
 
   const pathname = usePathname();
 
   return (
-    <View className="flex align-middle px-4 py-2 rounded-lg bg-background-100">
+    <View className="flex align-middle justify-between px-4 py-2 rounded-lg bg-background-100">
       <View className="flex flex-col gap-2">
         <View className="flex flex-row justify-between">
 
@@ -41,6 +44,9 @@ const Header = () => {
         <NavLink href="./notes" icon={<Ionicons name="document-text" size={24} />}>Your Notes</NavLink>
         <NavLink href="./tasks" icon={<Octicons name="tasklist" size={24} />}>Task Manegment</NavLink>
         <Hr />
+      </View>
+      <View >
+        {!isLoadingUser && <NavLink href="./user" icon={<Feather name="user" size={24} />}>{user?.name}</NavLink>}
       </View>
 
     </View>

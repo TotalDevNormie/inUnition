@@ -1,323 +1,203 @@
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import { useQuery, useMutation, useQueryClient, UseMutationResult } from '@tanstack/react-query';
+import { useMutation, useQuery } from "@tanstack/react-query";
+import { createContext, useContext, useEffect, useState } from "react";
 import NetInfo from '@react-native-community/netinfo';
+import { Platform } from "react-native";
+import { jwtDecode } from "jwt-decode";
+import sendRequest, { RequestError } from "../../functions/sendrequest";
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
-import { Platform } from 'react-native';
 
-export const API_URL = 'http://127.0.0.1:8000/api'; // Update this to your API URL
+
 
 const AuthContext = createContext(null);
 
-export type User = {
-  id: number;
-  name: string;
-  email: string;
-};
-
-export type RequestError = {
-  message?: string;
-  errors?: { [key: string]: string[] };
-};
-
 type AuthContextType = {
-  user: User | null;
-  isLoadingUser: boolean;
-  isOnline: boolean;
-  loginMutation: UseMutationResult;
-  registerMutation: UseMutationResult;
-  logoutMutation: UseMutationResult;
-  syncUserData: () => Promise<void>;
-};
+  user: any
+  isLoadingUser: boolean
+  loginMutation: any
+  // registerMutation: any
+  // logoutMutation: any
+  isOnline: boolean
+}
 
-export type AuthInfo = {
-  email: string;
-  password: string;
-  device_name?: string;
-};
+export type CredentialsType = {
+  name: string,
+  email: string,
+  password: string,
+  password_confirmation: string;
+}
 
-const isWeb = Platform.OS === 'web';
+export type LoginCredentaialsType = Pick<CredentialsType, 'email' | 'password'>;
 
-const storage = isWeb ? localStorage : AsyncStorage;
-
-const setStorageItem = async (key: string, value: string) => {
-  if (isWeb) {
-    storage.setItem(key, value);
-  } else {
-    await storage.setItem(key, value);
-  }
-};
-
-const getStorageItem = async (key: string) => {
-  if (isWeb) {
-    return storage.getItem(key);
-  } else {
-    return await storage.getItem(key);
-  }
-};
-
-const removeStorageItem = async (key: string) => {
-  if (isWeb) {
-    storage.removeItem(key);
-  } else {
-    await storage.removeItem(key);
-  }
-};
-
-const setCookie = async (cookieString: string) => {
-  if (!isWeb) {
-    await SecureStore.setItemAsync('cookie', cookieString);
-  }
-};
-
-const getCookie = async () => {
-  if (!isWeb) {
-    return await SecureStore.getItemAsync('cookie');
-  }
-  return null;
-};
-
-const clearCookie = async () => {
-  if (!isWeb) {
-    await SecureStore.deleteItemAsync('cookie');
-  }
-};
-
-const getCsrfTokenFromCookie = () => {
-  if (isWeb) {
-    const cookies = document.cookie.split(';');
-    console.log('cookies', document.cookie);
-    for (let cookie of cookies) {
-      const [name, value] = cookie.trim().split('=');
-      if (name === 'XSRF-TOKEN') {
-        console.log(name);
-        return decodeURIComponent(value);
-      }
-    }
-  }
-  return null;
-};
-
-const fetchWithCredentials = async (url: string, options: RequestInit = {}) => {
-  let csrfToken;
-  if (isWeb) {
-    csrfToken = getCsrfTokenFromCookie();
-  } else {
-    csrfToken = await getStorageItem('csrfToken');
-  }
-  
-  const headers = new Headers(options.headers);
-  console.log('works', isWeb);
-  
-  if (csrfToken) {
-    console.log('csrfToken', csrfToken);
-    headers.append('X-XSRF-TOKEN', csrfToken);
-  }
-  headers.append('Accept', 'application/json');
-  headers.append('Content-Type', 'application/json');
-
-  if (!isWeb) {
-    const cookie = await getCookie();
-    if (cookie) {
-      headers.append('Cookie', cookie);
-    }
-  }
-
-  const response = await fetch(url, {
-    ...options,
-    credentials: 'include',
-    headers,
-  });
-
-  if (!isWeb) {
-    const setCookieHeader = response.headers.get('set-cookie');
-    if (setCookieHeader) {
-      await setCookie(setCookieHeader);
-    }
-  }
-
-  return response;
-};
-
+type UserResponseType = {
+  user: { [key: string]: any } | null,
+  access_token: string | null,
+  refresh_token: string | null,
+}
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
-  const queryClient = useQueryClient();
 
   useEffect(() => {
-    const checkConnectivity = async () => {
-      if (isWeb) {
-        setIsOnline(navigator.onLine);
-        window.addEventListener('online', () => setIsOnline(true));
-        window.addEventListener('offline', () => setIsOnline(false));
-      } else {
-        const netInfoState = await NetInfo.fetch();
-        setIsOnline(netInfoState.isConnected);
-        const unsubscribe = NetInfo.addEventListener(state => {
-          setIsOnline(state.isConnected);
-        });
-        return unsubscribe;
-      }
-    };
+    const unsubscribe = NetInfo.addEventListener(state => {
+      setIsOnline(state.isConnected);
+    });
 
-    checkConnectivity();
-
-    return () => {
-      if (isWeb) {
-        window.removeEventListener('online', () => setIsOnline(true));
-        window.removeEventListener('offline', () => setIsOnline(false));
-      }
-    };
+    return () => unsubscribe();
   }, []);
 
- 
-  const getCsrfToken = async () => {
-    if (isOnline) {
-      try {
-        await fetch(`${API_URL}/csrf-cookie`, {
-          credentials: 'include',
-        });
-        
-        if (isWeb) {
-          // For web, the browser will automatically handle the cookie
-        } else {
-          // For mobile, we need to manually extract and store the token
-          const csrfToken = await getStorageItem('XSRF-TOKEN');
-          if (csrfToken) {
-            await setStorageItem('csrfToken', csrfToken);
-          }
-        }
-      } catch (error) {
-        console.error('Error fetching CSRF token:', error);
-      }
+
+  const makeAuthendicatedRequest = async (url, options) => {
+    if (!isOnline) {
+      console.log('Offline, queue request');
+      // implement queuing requests when offline
+      return;
     }
-  };
+    const response = await fetch(url, options);
+    const data = await response.json();
+    return data;
+  }
+
+  const { isLoading: isLoadingUser, error: userError } = useQuery({
+    queryKey: ['user'],
+
+    queryFn: async () => {
+      let accessToken: string | null = null;
+      let refreshToken: string | null = null;
+      const user = JSON.parse(await AsyncStorage.getItem('user')) || null;
+      if (Platform.OS === 'web') {
+        accessToken = localStorage.getItem('access-token');
+        refreshToken = localStorage.getItem('refresh-token');
+      } else {
+        accessToken = SecureStore.getItem('access-token');
+        refreshToken = SecureStore.getItem('refresh-token');
+      }
+
+      if(user) {
+        setUser(user);
+      }
+
+      console.log('fetching user...')
+
+      if (!accessToken && !refreshToken) {
+        console.log('No acces token');
+        throw {
+          message: 'No access token or refresh token found',
+        } as RequestError;
+      }
+
+      const decodedAccessToken = jwtDecode(accessToken);
+
+      if (decodedAccessToken.exp * 1000 < Date.now() && refreshToken) {
+        try {
+
+          const newTokenData = await sendRequest<UserResponseType>('/auth/refresh', {
+            method: 'POST',
+            body: JSON.stringify({ refresh_token: refreshToken }),
+          });
+          console.log('new token data', newTokenData);
+          if(Platform.OS === 'web') {
+            localStorage.setItem('access-token', newTokenData.access_token);
+            localStorage.setItem('refresh-token', newTokenData.refresh_token);
+          }else {
+            SecureStore.setItem('access-token', newTokenData.access_token);
+            SecureStore.setItem('refresh-token', newTokenData.refresh_token);
+          }
+        } catch (err) {
+          console.log(err);
+        }
+      }
+
+      const data = await sendRequest<UserResponseType>('/auth/me', {
+        method: 'POST',
+        body: JSON.stringify({ token: accessToken }),
+      });
+
+      AsyncStorage.setItem('user', JSON.stringify(data.user));
+      setUser(data.user);
+      return data.user;
+    },
+  });
 
   const loginMutation = useMutation({
     mutationKey: ['user'],
-    mutationFn: async (credentials: AuthInfo) => {
-      if (isOnline) {
-        await getCsrfToken(); // Ensure we have the latest CSRF token
-        const response = await fetchWithCredentials(`${API_URL}/auth/login`, {
-          method: 'POST',
-          body: JSON.stringify(credentials),
-        });
 
-        if (!response.ok) {
-          const data = await response.json() as RequestError;
-          throw data ?? { message: response.statusText };
-        }
-        return await response.json();
-      } else {
-        throw new Error('Cannot login while offline');
-      }
-    },
-    onSuccess: async (data) => {
+    mutationFn: async (requset: LoginCredentaialsType) => {
+
+      const data = await sendRequest<UserResponseType>('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify(requset),
+      });
+
       setUser(data.user);
-      await setStorageItem('userData', JSON.stringify(data.user));
-    },
-  });
+      AsyncStorage.setItem('user', JSON.stringify(data.user));
 
-  const syncUserData = async () => {
-    if (isOnline) {
-      try {
-        const response = await fetchWithCredentials(`${API_URL}/auth/me`);
-        if (response.ok) {
-          const userData = await response.json();
-          setUser(userData);
-          await setStorageItem('userData', JSON.stringify(userData));
+      if (data.access_token && data.refresh_token) {
+        if (Platform.OS === 'web') {
+          localStorage.setItem('access-token', data.access_token);
+          localStorage.setItem('refresh-token', data.refresh_token);
         } else {
-          throw new Error('Failed to sync user data');
+          SecureStore.setItem('access-token', data.access_token);
+          SecureStore.setItem('refresh-token', data.refresh_token);
         }
-      } catch (error) {
-        console.error('Error syncing user data:', error);
       }
-    }
-  };
 
+      return data.user;
+    }
+  });
 
   const registerMutation = useMutation({
     mutationKey: ['user'],
-    mutationFn: async (credentials: AuthInfo) => {
-      if (isOnline) {
-        await getCsrfToken();
-        const response = await fetchWithCredentials(`${API_URL}/auth/register`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(credentials),
-        });
+    mutationFn: async (requset: CredentialsType) => {
+      const data = await sendRequest<UserResponseType>('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify(requset),
+      });
 
-        if (!response.ok) {
-          const data = await response.json() as RequestError;
-          throw data ?? { message: response.statusText };
-        }
-        return await response.json();
-      } else {
-        throw new Error('Cannot register while offline');
-      }
-    },
-    onSuccess: async (data) => {
       setUser(data.user);
-      await setStorageItem('userData', JSON.stringify(data.user));
-    },
-  });
+      if(!isOnline) return;
+      AsyncStorage.setItem('user', JSON.stringify(data.user));
+
+      if (data.access_token && data.refresh_token) {
+        if (Platform.OS === 'web') {
+          localStorage.setItem('access-token', data.access_token);
+          localStorage.setItem('refresh-token', data.refresh_token);
+        } else {
+          SecureStore.setItem('access-token', data.access_token);
+          SecureStore.setItem('refresh-token', data.refresh_token);
+        }
+      }
+
+      return data.user
+    },});
+
 
   const logoutMutation = useMutation({
     mutationKey: ['user'],
     mutationFn: async () => {
-      if (isOnline) {
-        const response = await fetchWithCredentials(`${API_URL}/auth/logout`, {
-          method: 'POST',
-        });
-
-        if (!response.ok) {
-          const data = await response.json() as RequestError;
-          throw data ?? { message: response.statusText };
-        }
-      }
+      AsyncStorage.removeItem('user');
+      await SecureStore.deleteItemAsync('acces_token');
+      await SecureStore.deleteItemAsync('refresh_token');
       return null;
-    },
-    onSuccess: async () => {
-      setUser(null);
-      await clearCookie();
-      await removeStorageItem('userData');
-      queryClient.invalidateQueries({
-        queryKey: ['user'],
-      });
-    },
+    }
   });
 
-  const { isLoading: isLoadingUser } = useQuery({
-    queryKey: ['user'],
-    queryFn: async () => {
-      const storedUserData = await getStorageItem('userData');
-      if (storedUserData) {
-        const userData = JSON.parse(storedUserData);
-        setUser(userData);
-        if (isOnline) {
-          await syncUserData();
-        }
-        return userData;
-      }
-      return null;
-    },
-  });
-
-  const value: AuthContextType = {
+  const value = {
     user,
     isLoadingUser,
-    isOnline,
     loginMutation,
     registerMutation,
     logoutMutation,
-    syncUserData,
-  };
+    isOnline,
+  } as AuthContextType;
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
-};
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  )
+}
 
 export const useAuth = () => {
   const context = useContext<AuthContextType | null>(AuthContext);
@@ -325,4 +205,4 @@ export const useAuth = () => {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-};
+}

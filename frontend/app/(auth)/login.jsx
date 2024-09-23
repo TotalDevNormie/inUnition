@@ -1,17 +1,24 @@
 import { View, Text, TextInput, Pressable } from 'react-native'
 import { useAuth } from '../../components/auth/authContext';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useRouter } from 'expo-router';
 
 export default Login = () => {
   const { user, isLoadingUser, loginMutation } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const { data, error, isLoading, mutate } = loginMutation;
-
+  const { error, isLoading, mutate, isSuccess } = loginMutation;
+  const router = useRouter();
 
   const handleLogin = () => {
     mutate({ email, password });
   }
+
+  useEffect(() => {
+    if (isSuccess) {
+      router.navigate('/');
+    }
+  }, [isSuccess])
 
   return (
     <View className="p-4 flex flex-col gap-4">

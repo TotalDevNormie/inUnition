@@ -36,10 +36,9 @@ class AuthController extends Controller
 
         $token = auth()->tokenById($user->id);
 
-        return response()->json([
-            'user' => $user,
-            'token' => $token
-        ], 201);
+        $refreshToken = $this->generateRefreshToken($user->id);
+
+        return $this->respondWithTokens($token, $refreshToken, $user);
     }
 
     /**
@@ -52,13 +51,13 @@ class AuthController extends Controller
         $credentials = $request->only(['email', 'password']);
 
         if (!$token = auth()->attempt($credentials)) {
-            return response()->json(['error' => 'Unauthorized'], 401);
+            return response()->json(['message' => 'Email or password is incorrect'], 401);
         }
 
         // Generate refresh token
         $refreshToken = $this->generateRefreshToken(auth()->user()->id);
 
-        return $this->respondWithTokens($token, $refreshToken);
+        return $this->respondWithTokens($token, $refreshToken, auth()->user());
     }
 
     /**
@@ -69,13 +68,8 @@ class AuthController extends Controller
     public function me()
     {
         $user = auth()->user();
-        $newAccessToken = auth()->refresh();
-        $newRefreshToken = $this->generateRefreshToken($user->id);
 
-        // Delete the old refresh token
-        DB::table('refresh_tokens')->where('user_id', $user->id)->delete();
-
-        return $this->respondWithTokens($newAccessToken, $newRefreshToken, $user);
+        return $this->respondWithTokens(user: $user);
     }
 
     /**
@@ -94,16 +88,6 @@ class AuthController extends Controller
     }
 
     /**
-     * Refresh a token using the access token.
-     *
-     * @return \Illuminate\Http\JsonResponse
-     */
-    public function refresh()
-    {
-        return $this->respondWithTokens(auth()->refresh());
-    }
-
-    /**
      * Exchange refresh token for new access token.
      *
      * @return \Illuminate\Http\JsonResponse
@@ -113,15 +97,16 @@ class AuthController extends Controller
         $refreshToken = $request->input('refresh_token');
 
         $tokenData = DB::table('refresh_tokens')->where('token', $refreshToken)->first();
-
         if (!$tokenData || $tokenData->expires_at < Carbon::now()) {
-            return response()->json(['error' => 'Invalid or expired refresh token'], 401);
+            return response()->json(['message' => 'Invalid or expired refresh token'], 401);
         }
 
         // Generate new access token and refresh token
         auth()->login(User::find($tokenData->user_id));
         $newAccessToken = auth()->tokenById($tokenData->user_id);
-        $newRefreshToken = $this->generateRefreshToken($tokenData->user_id);
+        $authController = new AuthController();
+
+        $newRefreshToken = $authController->generateRefreshToken($tokenData->user_id);
 
         // Delete the old refresh token
         DB::table('refresh_tokens')->where('token', $refreshToken)->delete();
@@ -135,7 +120,7 @@ class AuthController extends Controller
      * @param  int $userId
      * @return string
      */
-    private function generateRefreshToken($userId)
+    public function generateRefreshToken($userId)
     {
         $refreshToken = bin2hex(random_bytes(40)); // Generate random refresh token
         $expiresAt = Carbon::now()->addDays(30);  // Refresh token expiration (30 days)
@@ -147,7 +132,9 @@ class AuthController extends Controller
             'expires_at' => $expiresAt
         ]);
 
-        return $refreshToken;
+        $testToken = DB::table('refresh_tokens')->where('token', $refreshToken)->first()->token;
+
+        return $testToken;
     }
 
     /**
@@ -158,7 +145,7 @@ class AuthController extends Controller
      * @param  User $user
      * @return \Illuminate\Http\JsonResponse
      */
-    protected function respondWithTokens($accessToken, $refreshToken = null, $user = null)
+    protected function respondWithTokens($accessToken = null, $refreshToken = null, $user = null)
     {
         return response()->json([
             'access_token' => $accessToken,
