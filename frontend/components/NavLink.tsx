@@ -1,7 +1,13 @@
 import { Link } from 'expo-router'
 import { View, Text } from 'react-native'
 
-export default function NavLink({ href, className, children, icon }) {
+type NavLinkProps = {
+  href: string
+  className?: string
+  children: React.ReactNode
+  icon: React.ReactNode
+}
+export default function NavLink({ href, className, children, icon }: NavLinkProps) {
   return (
     <Link href={href}>
       <View className={`p-2 rounded-lg color-text flex flex-row gap-2 items-center ${className}`}>

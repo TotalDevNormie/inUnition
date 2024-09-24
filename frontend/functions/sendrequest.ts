@@ -26,9 +26,11 @@ export default async function sendRequest<T>(url: string,  options?: RequestInit
     }
 
     const response = await fetch(API_URL + url, options);
+    console.log(response);
 
     if (!response.ok) {
         const data = await (response.json()) as RequestError;
+        console.log(data);
         throw data ?? { message: response.statusText } as RequestError;
     }
     return await response.json() as unknown as T;

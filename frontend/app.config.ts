@@ -10,9 +10,10 @@ const config: ExpoConfig = {
   version: '1.0.0',
   orientation: 'portrait',
   userInterfaceStyle: 'automatic',
+  icon: './assets/icon.png',
   splash: {
-    resizeMode: 'contain',
-    backgroundColor: '#ffffff',
+    backgroundColor: '#242A29',
+    image: './assets/splashIcon.png',
   },
   ios: {
     supportsTablet: true,
@@ -20,11 +21,12 @@ const config: ExpoConfig = {
   android: {
     adaptiveIcon: {
       backgroundColor: '#ffffff',
+      foregroundImage: './assets/icon.png',
     },
   },
   web: {
     bundler: 'metro',
-    favicon: './assets/images.png',
+    favicon: './assets/icon.png',
   },
   plugins: [
     'expo-router',

@@ -40,9 +40,9 @@ const Header = () => {
           </Pressable>
         </View>
         <Hr />
-        <NavLink href="./" icon={<Ionicons name="home" size={24} />}>Home</NavLink>
-        <NavLink href="./notes" icon={<Ionicons name="document-text" size={24} />}>Your Notes</NavLink>
-        <NavLink href="./tasks" icon={<Octicons name="tasklist" size={24} />}>Task Manegment</NavLink>
+        <NavLink href="/" icon={<Ionicons name="home" size={24} />}>Home</NavLink>
+        <NavLink href="/notes" icon={<Ionicons name="document-text" size={24} />}>Your Notes</NavLink>
+        <NavLink href="/tasks" icon={<Octicons name="tasklist" size={24} />}>Task Manegment</NavLink>
         <Hr />
       </View>
       <View >

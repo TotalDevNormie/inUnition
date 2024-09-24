@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { createContext, useContext, useEffect, useState } from "react";
 import NetInfo from '@react-native-community/netinfo';
 import { Platform } from "react-native";
@@ -6,6 +6,7 @@ import { jwtDecode } from "jwt-decode";
 import sendRequest, { RequestError } from "../../functions/sendrequest";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
+import { err } from "react-native-svg";
 
 
 
@@ -38,10 +39,11 @@ type UserResponseType = {
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [isOnline, setIsOnline] = useState(true);
+  const queryClient = useQueryClient();
 
   useEffect(() => {
     const unsubscribe = NetInfo.addEventListener(state => {
-      setIsOnline(state.isConnected);
+      setIsOnline(state.isConnected as boolean);
     });
 
     return () => unsubscribe();
@@ -65,7 +67,21 @@ export const AuthProvider = ({ children }) => {
     queryFn: async () => {
       let accessToken: string | null = null;
       let refreshToken: string | null = null;
-      const user = JSON.parse(await AsyncStorage.getItem('user')) || null;
+
+      let user = null;
+      try {
+        const userData = await AsyncStorage.getItem('user');
+        if (userData !== null) {
+          user = JSON.parse(userData);
+        }
+      } catch (err) {
+
+      }
+      if (user) {
+        setUser(user);
+      }
+      if (!isOnline) return;
+
       if (Platform.OS === 'web') {
         accessToken = localStorage.getItem('access-token');
         refreshToken = localStorage.getItem('refresh-token');
@@ -74,9 +90,6 @@ export const AuthProvider = ({ children }) => {
         refreshToken = SecureStore.getItem('refresh-token');
       }
 
-      if(user) {
-        setUser(user);
-      }
 
       console.log('fetching user...')
 
@@ -96,11 +109,10 @@ export const AuthProvider = ({ children }) => {
             method: 'POST',
             body: JSON.stringify({ refresh_token: refreshToken }),
           });
-          console.log('new token data', newTokenData);
-          if(Platform.OS === 'web') {
+          if (Platform.OS === 'web') {
             localStorage.setItem('access-token', newTokenData.access_token);
             localStorage.setItem('refresh-token', newTokenData.refresh_token);
-          }else {
+          } else {
             SecureStore.setItem('access-token', newTokenData.access_token);
             SecureStore.setItem('refresh-token', newTokenData.refresh_token);
           }
@@ -144,6 +156,8 @@ export const AuthProvider = ({ children }) => {
       }
 
       return data.user;
+    }, onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user'] });
     }
   });
 
@@ -156,9 +170,7 @@ export const AuthProvider = ({ children }) => {
       });
 
       setUser(data.user);
-      if(!isOnline) return;
       AsyncStorage.setItem('user', JSON.stringify(data.user));
-
       if (data.access_token && data.refresh_token) {
         if (Platform.OS === 'web') {
           localStorage.setItem('access-token', data.access_token);
@@ -168,18 +180,26 @@ export const AuthProvider = ({ children }) => {
           SecureStore.setItem('refresh-token', data.refresh_token);
         }
       }
-
       return data.user
-    },});
+    },
+
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+    }
+  });
 
 
   const logoutMutation = useMutation({
     mutationKey: ['user'],
     mutationFn: async () => {
       AsyncStorage.removeItem('user');
+      return null;
+    },
+    onSuccess: async () => {
+      queryClient.invalidateQueries({ queryKey: ['user'] });
+      setUser(null);
       await SecureStore.deleteItemAsync('acces_token');
       await SecureStore.deleteItemAsync('refresh_token');
-      return null;
     }
   });
 
