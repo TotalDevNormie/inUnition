@@ -1,4 +1,4 @@
-export const API_URL = 'http://10.13.14.118:8000/api';
+export const API_URL = 'http://127.0.0.1:8000/api';
 export type RequestError = {
     message?: string;
     errors?: { [key: string]: string[] };
@@ -26,11 +26,9 @@ export default async function sendRequest<T>(url: string,  options?: RequestInit
     }
 
     const response = await fetch(API_URL + url, options);
-    console.log(response);
 
     if (!response.ok) {
         const data = await (response.json()) as RequestError;
-        console.log(data);
         throw data ?? { message: response.statusText } as RequestError;
     }
     return await response.json() as unknown as T;

@@ -12,7 +12,7 @@ export default function WebLayout() {
       <Navigator router={TabRouter}>
         <View className="flex flex-row gap-2 color-current h-full">
           <Header />
-          <View className="w-full rounded-lg p-2 bg-background-100">
+          <View className="flex-1 rounded-lg p-2 bg-background-100">
             <Slot />
           </View>
         </View>
@@ -25,7 +25,6 @@ const Header = () => {
   const { navigation, state, descriptors, router } = Navigator.useContext();
   const theme = useColorScheme();
   const { user, isLoadingUser } = useAuth();
-  console.log(user);
 
   const pathname = usePathname();
 
@@ -41,12 +40,12 @@ const Header = () => {
         </View>
         <Hr />
         <NavLink href="/" icon={<Ionicons name="home" size={24} />}>Home</NavLink>
-        <NavLink href="/notes" icon={<Ionicons name="document-text" size={24} />}>Your Notes</NavLink>
+        <NavLink href="/notes" icon={<Ionicons name="document-text" size={24} />}>New Note</NavLink>
         <NavLink href="/tasks" icon={<Octicons name="tasklist" size={24} />}>Task Manegment</NavLink>
         <Hr />
       </View>
       <View >
-        {!isLoadingUser && <NavLink href="./user" icon={<Feather name="user" size={24} />}>{user?.name}</NavLink>}
+        {!user && <NavLink href="./user" icon={<Feather name="user" size={24} />}>{user?.name}</NavLink>}
       </View>
 
     </View>

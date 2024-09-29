@@ -10,7 +10,6 @@ export default Login = () => {
   const [passwordConfirm, setPasswordConfirm] = useState('');
   const { data, error, isLoading, mutate } = registerMutation;
 
-  console.log(data);
   const handleRegister = () => {
     mutate({ name, email, password, password_confirmation: passwordConfirm });
   }

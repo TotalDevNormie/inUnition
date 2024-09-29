@@ -3,10 +3,11 @@ import { createContext, useContext, useEffect, useState } from "react";
 import NetInfo from '@react-native-community/netinfo';
 import { Platform } from "react-native";
 import { jwtDecode } from "jwt-decode";
-import sendRequest, { RequestError } from "../../functions/sendrequest";
+import sendRequest, { RequestError } from "../../utils/sendrequest";
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as SecureStore from 'expo-secure-store';
 import { err } from "react-native-svg";
+import { set } from "react-hook-form";
 
 
 
@@ -95,6 +96,9 @@ export const AuthProvider = ({ children }) => {
 
       if (!accessToken && !refreshToken) {
         console.log('No acces token');
+        setUser(null);
+        await AsyncStorage.removeItem('user');
+
         throw {
           message: 'No access token or refresh token found',
         } as RequestError;
@@ -118,7 +122,20 @@ export const AuthProvider = ({ children }) => {
           }
         } catch (err) {
           console.log(err);
+          setUser(null);
+          await AsyncStorage.removeItem('user');
+          if (Platform.OS === 'web') {
+            localStorage.removeItem('access-token');
+            localStorage.removeItem('refresh-token');
+          } else {
+            SecureStore.removeItem('access-token');
+            SecureStore.removeItem('refresh-token');
+          }
+          throw {
+            message: 'No access token or refresh token found',
+          } as RequestError;
         }
+
       }
 
       const data = await sendRequest<UserResponseType>('/auth/me', {
