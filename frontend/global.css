@@ -3,8 +3,13 @@
 @tailwind utilities;
 
 body {
-    /* @apply bg-background;
+  /* @apply bg-background;
     @apply text-text; */
-    /* @apply font-body;
+  /* @apply font-body;
     @apply antialiased; */
 }
+
+.specific-issue > * {
+  flex-grow: 1;
+}
+

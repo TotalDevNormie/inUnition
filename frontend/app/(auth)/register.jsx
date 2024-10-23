@@ -1,5 +1,5 @@
 import { View, Text, TextInput, Pressable } from 'react-native'
-import { useAuth } from '../../components/auth/authContext';
+import { useAuth } from '../../components/auth/AuthContext';
 import { useState } from 'react';
 
 export default Login = () => {

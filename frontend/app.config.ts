@@ -1,37 +1,40 @@
-import 'ts-node/register'; // Add this to import TypeScript files
-import { ExpoConfig } from 'expo/config';
-import { useColorScheme } from 'react-native';
-// const colorScheme = useColorScheme();
+import "ts-node/register"; // Add this to import TypeScript files
+import { ExpoConfig } from "expo/config";
 
 const config: ExpoConfig = {
-  name: 'inUnition',
-  slug: 'inunition',
-  scheme: 'inunition',
-  version: '1.0.0',
-  orientation: 'portrait',
-  userInterfaceStyle: 'automatic',
-  icon: './assets/icon.png',
+  name: "inUnition",
+  slug: "inunition",
+  scheme: "inunition",
+  version: "1.0.0",
+  orientation: "portrait",
+  backgroundColor: "#121517",
+  userInterfaceStyle: "dark",
+  icon: "./assets/icon.png",
+  extra: {
+    eas: {
+      projectId: "32478bc0-845f-4e39-a556-a26a34a22f91",
+    },
+  },
   splash: {
-    backgroundColor: '#242A29',
-    image: './assets/splashIcon.png',
+    backgroundColor: "#242A29",
+    image: "./assets/splashIcon.png",
   },
   ios: {
     supportsTablet: true,
   },
   android: {
+    package: "com.totalnormie.inunition",
+    versionCode: 1,
     adaptiveIcon: {
-      backgroundColor: '#ffffff',
-      foregroundImage: './assets/icon.png',
+      backgroundColor: "#ffffff",
+      foregroundImage: "./assets/icon.png",
     },
   },
   web: {
-    bundler: 'metro',
-    favicon: './assets/icon.png',
+    bundler: "metro",
+    favicon: "./assets/icon.png",
   },
-  plugins: [
-    'expo-router',
-    "expo-secure-store",
-  ],
-}
+  plugins: ["expo-router", "expo-secure-store"],
+};
 
 export default config;
