@@ -9,9 +9,14 @@ import { FlatList, Pressable, Text, TextInput, View } from "react-native";
 type TagsInputProps = {
   tags: string[];
   setTags: (tags: string[]) => void;
+  inBottomSheet?: boolean;
 };
 
-export const TagsInput = ({ tags, setTags, onChange }: TagsInputProps) => {
+export const TagsInput = ({
+  tags,
+  setTags,
+  inBottomSheet = false,
+}: TagsInputProps) => {
   const [newTag, setNewTag] = useState("");
 
   const handleAddTag = () => {
@@ -21,14 +26,17 @@ export const TagsInput = ({ tags, setTags, onChange }: TagsInputProps) => {
     }
   };
 
+  const CorrectInput = inBottomSheet ? BottomSheetTextInput : TextInput;
+  const CorrectList = inBottomSheet ? BottomSheetFlatList : FlatList;
+
   const handleRemoveTag = (tag: string) => {
     setTags(tags.filter((t) => t !== tag));
   };
   return (
-    <View className="flex gap-2 ">
+    <View className="flex gap-2">
       <Text className="text-text">Tags</Text>
       <View className="flex gap-2 flex-row bg-secondary-850 p-2 rounded-xl">
-        <BottomSheetTextInput
+        <CorrectInput
           value={newTag}
           onChangeText={setNewTag}
           className="text-text rounded-xl grow focus:outline-none"
@@ -36,16 +44,16 @@ export const TagsInput = ({ tags, setTags, onChange }: TagsInputProps) => {
           blurOnSubmit={false}
         />
         <Pressable
-          className="text-text bg-primary p-2 rounded-full self-end"
+          className="text-text bg-primary p-2 rounded-xl self-end"
           onPress={handleAddTag}
         >
-          <Entypo name="plus" size={18} cclassName="text-background" />
+          <Entypo name="plus" size={18} className="text-background" />
         </Pressable>
       </View>
-      <BottomSheetFlatList
+      <CorrectList
         data={tags}
         renderItem={({ item: tag }) => (
-          <View className="bg-secondary-850 flex flex-row gap-1 p-3 rounded-xl items-center mr-2">
+          <View className="bg-secondary-850 flex flex-row gap-1 py-2 px-4 rounded-xl items-center mr-2">
             <Text className="text-text">{tag} </Text>
             <Pressable onPress={() => handleRemoveTag(tag)}>
               <Text className="text-text">

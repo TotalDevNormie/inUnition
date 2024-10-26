@@ -2,12 +2,9 @@ import { ScrollView, Text, View } from "react-native";
 import { TabRouter } from "@react-navigation/native";
 import { Navigator, usePathname, Slot, Link } from "expo-router";
 import NavLink from "../../components/NavLink";
-import { Feather, Ionicons } from "@expo/vector-icons";
-import {
-  SafeAreaView,
-  useSafeAreaInsets,
-} from "react-native-safe-area-context";
-import DarkLogoFull from "../../assets/darkLogoFull.svg";
+import { Feather, Ionicons, MaterialIcons } from "@expo/vector-icons";
+import { SafeAreaView } from "react-native-safe-area-context";
+import DarkLogo from "../../assets/darkLogo.svg";
 import { useAuth } from "../../components/auth/AuthContext";
 
 export default function TabsLayout() {
@@ -32,30 +29,25 @@ const Bar = () => {
   const { navigation, state, descriptors, router } = Navigator.useContext();
 
   const pathname = usePathname();
+  console.log("pathname", pathname);
 
   return (
-    <View className="flex flex-row align-middle p-2 mx-4 rounded-xl justify-evenly bg-secondary-850">
+    <View className="flex flex-row align-middle p-2 mx-8 rounded-xl justify-evenly bg-secondary-850">
       <NavLink
         href="/"
-        className="flex flex-col justify-center"
-        icon={<Ionicons name="home" size={20} />}
-      >
-        <Text className="color-text text-sm">Home</Text>
-      </NavLink>
+        className={`flex flex-col justify-center rounded-xl ${pathname === "/" && "bg-secondary "}`}
+        icon={<Ionicons name="home" size={32} />}
+      ></NavLink>
       <NavLink
         href="/notes"
-        className="flex flex-col justify-center"
-        icon={<Ionicons name="document-text" size={20} />}
-      >
-        Notes
-      </NavLink>
+        className={`flex flex-col justify-center rounded-xl ${pathname === "/notes" && "bg-secondary "}`}
+        icon={<Ionicons name="document-text" size={32} />}
+      ></NavLink>
       <NavLink
         href="/tasks"
-        className="flex flex-col justify-center"
-        icon={<Ionicons name="document-text" size={20} />}
-      >
-        Tasks
-      </NavLink>
+        className={`flex flex-col justify-center rounded-xl ${pathname === "/tasks" && "bg-secondary "}`}
+        icon={<MaterialIcons name="task-alt" size={32} />}
+      ></NavLink>
     </View>
   );
 };
@@ -63,8 +55,10 @@ const Bar = () => {
 const Header = () => {
   const { user, isLoadingUser } = useAuth();
   return (
-    <View className="flex flex-row p-2 rounded-xl">
-      <DarkLogoFull className="text-3xl" />
+    <View className="flex flex-row px-8 py-4 rounded-xl">
+      <View>
+        <DarkLogo />
+      </View>
       {user && (
         <NavLink href="./user" icon={<Feather name="user" size={24} />}>
           {user?.name}

@@ -16,7 +16,7 @@ const config: ExpoConfig = {
     },
   },
   splash: {
-    backgroundColor: "#242A29",
+    backgroundColor: "#313749",
     image: "./assets/splashIcon.png",
   },
   ios: {
@@ -26,7 +26,7 @@ const config: ExpoConfig = {
     package: "com.totalnormie.inunition",
     versionCode: 1,
     adaptiveIcon: {
-      backgroundColor: "#ffffff",
+      backgroundColor: "#313749",
       foregroundImage: "./assets/icon.png",
     },
   },

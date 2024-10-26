@@ -2,7 +2,7 @@ import { Platform } from "react-native";
 import NetInfo from "@react-native-community/netinfo";
 import * as FileSystem from "expo-file-system";
 import { v4 as uuidv4 } from "uuid";
-import { cleanupTags, getTagsFormUUID } from "./manageTags";
+import { cleanupTags, getTagsFormUUID, saveTags } from "./manageTags";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { queryClient } from "../app/_layout";
 import { compareTimestamps } from "./manageNotes";
@@ -26,6 +26,9 @@ export type TaskGroup = {
   description: string;
   created_at: string;
   updated_at: string;
+  ends_at?: string;
+  next_reset?: string;
+  reset_interval?: string;
   statusType: string[];
 };
 export type TaskGroupFull = TaskGroup & {
@@ -53,7 +56,9 @@ export const getTaskGroups = async (): Promise<TaskGroupObject | null> => {
     return null;
   }
   const file = await FileSystem.readAsStringAsync(fileUri);
-  getTaskGroupsFromDB();
+  getTaskGroupsFromDB().catch((error) =>
+    console.log("Background sync error:", error),
+  );
   return file ? (JSON.parse(file) as TaskGroupObject) : null;
 };
 
@@ -71,22 +76,18 @@ const getTaskGroupsFromDB = async (shouldGetAllTaskGroups = false) => {
       deleted: { uuid: string }[];
     }>("/task-groups", options, true);
 
-    console.log(taskGroups);
-
     if (taskGroups.length === 0 && deleted.length === 0) return;
 
     await Promise.all(deleted.map((entry) => deleteTaskGroup(entry.uuid)));
-
     const allTaskGroups = await getTaskGroups();
     const deletedEntries = JSON.parse(
       (await AsyncStorage.getItem("deletedEntries")) || "[]",
     );
 
-    taskGroups.map((newTaskGroup: TaskGroupWithUUID) => {
+    taskGroups.map((newTaskGroup) => {
       if (deletedEntries && deletedEntries.includes(newTaskGroup.uuid)) {
         return;
       }
-
       if (
         !allTaskGroups ||
         !allTaskGroups[newTaskGroup.uuid] ||
@@ -95,25 +96,21 @@ const getTaskGroupsFromDB = async (shouldGetAllTaskGroups = false) => {
           allTaskGroups[newTaskGroup.uuid].updated_at,
         ) > 0
       ) {
-        updateTaskGroup(
-          newTaskGroup.uuid,
-          newTaskGroup.name,
-          newTaskGroup.description,
-          newTaskGroup.statusType,
-        );
+        updateTaskGroup(newTaskGroup.uuid, { ...newTaskGroup });
       }
-    }),
-      await AsyncStorage.setItem("lastTaskGroupSync", new Date().toISOString());
+    });
+
+    await AsyncStorage.setItem("lastTaskGroupSync", new Date().toISOString());
     queryClient.invalidateQueries({ queryKey: ["taskGroups"] });
   } catch (error) {
-    console.error(error);
+    // Empty catch block, just like in notes
   }
 };
-
 export const createTaskGroup = async (
   name: string,
   description: string,
   statusType: string[],
+  tags: string[],
 ) => {
   if (!name) {
     throw new Error("Name is required");
@@ -129,6 +126,8 @@ export const createTaskGroup = async (
     updated_at: new Date().toISOString(),
     statusType: statusType,
   };
+  saveTags(tags, uuid, "task");
+
   if (Platform.OS === "web") {
     localStorage.setItem(TASK_GROUPS, JSON.stringify(newTasks));
   } else {
@@ -150,7 +149,7 @@ export const createTaskGroup = async (
           method: "POST",
         },
         true,
-      );
+      ).catch((e) => {});
     }
   });
 
@@ -177,9 +176,7 @@ export const deleteTaskGroup = async (uuid: string) => {
 
 export const updateTaskGroup = async (
   uuid: string,
-  name: string,
-  description: string,
-  statusType: string[],
+  { name, description, statusType, tags, ends_at },
 ) => {
   const tasks = await getTaskGroups();
   if (!tasks) return;
@@ -187,13 +184,20 @@ export const updateTaskGroup = async (
     throw new Error("Task group not found");
   }
   const newTasks = tasks ? { ...tasks } : {};
+  console.log({ name, description, statusType, tags, ends_at });
   newTasks[uuid] = {
-    name,
-    description,
+    name: name || tasks[uuid].name || "",
+    description: description || tasks[uuid].description || "",
     created_at: newTasks[uuid].created_at,
     updated_at: new Date().toISOString(),
-    statusType: statusType,
+    ends_at: ends_at || tasks[uuid].ends_at || null,
+    statusType: statusType ||
+      tasks[uuid].statusType || ["Todo", "Doing", "Done"],
   };
+
+  if (tags) {
+    saveTags(tags, uuid, "task");
+  }
 
   if (Platform.OS === "web") {
     localStorage.setItem(TASK_GROUPS, JSON.stringify(newTasks));
@@ -311,18 +315,14 @@ export const saveTask = async (
 
   NetInfo.fetch().then((state) => {
     if (state.isConnected) {
-      try {
-        sendRequest(
-          "/tasks/save",
-          {
-            body: JSON.stringify(newTask),
-            method: "POST",
-          },
-          true,
-        );
-      } catch (e) {
-        console.error("Error sending request:", e);
-      }
+      sendRequest(
+        "/tasks/save",
+        {
+          body: JSON.stringify(newTask),
+          method: "POST",
+        },
+        true,
+      ).catch((e) => {});
     } else if (!saveToBuffer) {
       saveTask(task, taskGroupUUID, taskUUID, true);
     }
@@ -354,16 +354,11 @@ export const deleteTask = async (taskUUID: string): Promise<void> => {
 
   NetInfo.fetch().then(async (state) => {
     if (state.isConnected) {
-      try {
-        await sendRequest(
-          "/tasks/delete",
-          { body: JSON.stringify({ uuid: taskUUID }), method: "POST" },
-          true,
-        );
-      } catch (e) {
-        console.error("Error deleting task on server:", e);
-        throw e;
-      }
+      sendRequest(
+        "/tasks/delete",
+        { body: JSON.stringify({ uuid: taskUUID }), method: "POST" },
+        true,
+      ).catch((e) => {});
     } else {
       const oldDeletedEntriesBuffer = await AsyncStorage.getItem(
         "deletedEntries-buffer",

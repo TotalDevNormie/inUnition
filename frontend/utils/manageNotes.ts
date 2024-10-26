@@ -102,8 +102,8 @@ export const getNotesFromDB = async (shouldGetAllNotes: boolean = false) => {
       ) {
         saveNote({ ...newNote }, [], newNote.uuid);
       }
-    }),
-      await AsyncStorage.setItem("lastNoteSync", new Date().toISOString());
+    });
+    await AsyncStorage.setItem("lastNoteSync", new Date().toISOString());
     queryClient.invalidateQueries({ queryKey: ["notes"] });
   } catch (error) {}
 };

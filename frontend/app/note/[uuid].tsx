@@ -8,6 +8,8 @@ import { TagsInput } from "../../components/TagsInput";
 import DueDateInput from "../../components/DueDateInput";
 import { AntDesign, Entypo, FontAwesome5 } from "@expo/vector-icons";
 import { router } from "expo-router";
+import "react-native-get-random-values";
+import { v4 } from "uuid";
 
 export default function Note() {
   return <NoteParent {...{ NotePageContent }} />;
@@ -25,7 +27,7 @@ const NotePageContent = ({
   setTags,
   dueDate,
   setDueDate,
-  handleOptionsSave,
+  handleDelete,
 }) => {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -90,12 +92,22 @@ const NotePageContent = ({
         backgroundStyle={{ backgroundColor: "#121517" }}
       >
         <BottomSheetView>
-          <View className="flex flex-col p-8 pb-10">
-            <TagsInput
-              tags={tags}
-              setTags={setTags}
-              onChange={handleOptionsSave}
-            />
+          <View className="flex flex-col p-8 pb-10 gap-4">
+            <View className="flex flex-row gap-2">
+              <Pressable
+                onPress={handleDelete}
+                className="bg-red-500 p-2 rounded-xl flex-1"
+              >
+                <Text className="text-text text-center">Delete Note </Text>
+              </Pressable>
+              <Pressable
+                onPress={() => router.push(`/note/${v4()}`)}
+                className="bg-accent p-2 rounded-xl flex-1"
+              >
+                <Text className="text-background text-center">New Note</Text>
+              </Pressable>
+            </View>
+            <TagsInput tags={tags} setTags={setTags} inBottomSheet />
             <DueDateInput date={dueDate} setDate={setDueDate} />
           </View>
         </BottomSheetView>

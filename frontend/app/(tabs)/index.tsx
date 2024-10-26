@@ -5,6 +5,8 @@ import { Link, router } from "expo-router";
 import { FontAwesome5 } from "@expo/vector-icons";
 import { ScrollView } from "react-native-gesture-handler";
 import moment from "moment";
+import "react-native-get-random-values";
+import { v4 } from "uuid";
 
 export default Home = () => {
   const { data: notes } = useQuery({
@@ -40,7 +42,7 @@ export default Home = () => {
       });
   console.log(relevantNotes);
   return (
-    <View className="flex flex-col gap-10 flex-1">
+    <View className="flex flex-col gap-10 flex-1 px-8">
       <View className="flex flex-col gap-8 ">
         <Text className="text-3xl text-text">Relevant Notes</Text>
         <View className="flex ">
@@ -88,7 +90,10 @@ export default Home = () => {
             </View>
           ) : (
             <View>
-              <Link className="color-text" href="/notes/new">
+              <Link
+                className="color-background p-2 bg-primary rounded-xl text-center"
+                href={`note/${v4()}`}
+              >
                 No notes, create one
               </Link>
             </View>

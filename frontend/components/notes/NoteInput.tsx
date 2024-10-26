@@ -23,7 +23,7 @@ export default function NoteInput({
 
   const handleChange = (text, isTitle) => {
     if (isTitle) {
-      setTitle(text);
+      setTitle(text.substring(0, 100));
     } else {
       setContent(text);
     }
