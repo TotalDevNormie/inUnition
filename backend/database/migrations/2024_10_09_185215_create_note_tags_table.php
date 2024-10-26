@@ -12,9 +12,9 @@ return new class () extends Migration {
     {
         Schema::create('note_tags', function (Blueprint $table) {
             $table->id();
-            $table->timestamps();
             $table->foreignId('tag_id')->constrained()->cascadeOnDelete();
             $table->foreignUuid('note_uuid')->constrained('notes', 'uuid')->cascadeOnDelete();
+            $table->timestamps();
         });
     }
 

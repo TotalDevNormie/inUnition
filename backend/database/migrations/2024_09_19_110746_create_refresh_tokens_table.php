@@ -11,10 +11,10 @@ return new class extends Migration {
     public function up(): void
     {
         Schema::create('refresh_tokens', function (Blueprint $table) {
-            $table->id(); // Primary key
-            $table->string('token')->unique(); // Unique refresh token
-            $table->timestamp('expires_at'); // Expiration timestamp for refresh token
-            $table->timestamps(); // 
+            $table->id(); 
+            $table->string('token')->unique(); 
+            $table->timestamp('expires_at'); 
+            $table->timestamps();
             $table->foreignId('user_id')->constrained();
         });
     }

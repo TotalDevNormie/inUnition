@@ -19,6 +19,7 @@ return new class () extends Migration {
             $table->timestamp('next_reset')->nullable();
             $table->timestamp('reset_interval')->nullable();
             $table->timestamp('ends_at')->nullable();
+            $table->timestamps();
         });
     }
 
