@@ -13,3 +13,6 @@ body {
   flex-grow: 1;
 }
 
+input:focus, textarea:focus {
+  outline: none;
+}
