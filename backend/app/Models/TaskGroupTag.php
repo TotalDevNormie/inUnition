@@ -12,7 +12,7 @@ class TaskGroupTag extends Model
     use HasFactory;
 
     protected $fillable = [
-        'task_group_id',
+        'task_group_uuid',
         'tag_id',
     ];
 

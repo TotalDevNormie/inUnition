@@ -5,14 +5,18 @@ namespace App\Http\Controllers;
 use App\Models\DeletedEntries;
 use App\Models\TaskGroup;
 use App\Models\TaskStatus;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class TaskGroupController extends Controller
 {
     public function getTaskGroups(Request $request)
     {
         $taskGroupsQuery = TaskGroup::where('user_id', auth()->user()->id);
-        $deletedQuery = DeletedEntries::where('user_id', auth()->user()->id)->where('type', 'taskGroup');
+        $deletedQuery = DeletedEntries::where('user_id', auth()->user()->id)
+            ->where('type', 'taskGroup');
 
         if (isset($request['timestamp'])) {
             $timestamp = Carbon::parse($request['timestamp']);
@@ -24,15 +28,34 @@ class TaskGroupController extends Controller
             'taskGroups' => $taskGroupsQuery->get(),
             'deleted' => $deletedQuery->get()
         ], 200);
-
     }
 
     public function saveTaskGroup(Request $request)
     {
         try {
-            $request->validate(['uuid' => 'required|note', 'task_statuses' => 'required|array']);
+            $validated = $request->validate([
+                'uuid' => 'required|uuid',
+                'task_statuses' => 'required|array',
+                'name' => 'nullable|string',
+                'description' => 'nullable|string',
+                'ends_at' => 'nullable|date',
+                'next_reset' => 'nullable|date',
+                'reset_interval' => 'nullable|integer',
+                'updated_at' => 'nullable|date',
+                'created_at' => 'nullable|date'
+            ]);
+
+            DB::beginTransaction();
+            $this->save($validated);
+            DB::commit();
+
+            return response()->json(['message' => 'Task group saved successfully'], 200);
+
         } catch (ValidationException $e) {
-            return response()->json($e->errors(), 422);
+            return response()->json(['errors' => $e->errors()], 422);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => 'Failed to save task group: ' . $e->getMessage()], 500);
         }
     }
 
@@ -42,93 +65,114 @@ class TaskGroupController extends Controller
             throw new \Exception('Missing uuid');
         }
 
-        $taskGroup = TaskGroup::find($taskGroupInput['uuid']);
-        if (!$taskGroup && !DeletedEntries::find($taskGroupInput['uuid'])) {
-            $title = isset($taskGroupInput['title']) ? substr($taskGroupInput['title'], 0, 100) : '';
-            $content = $taskGroupInput['content'] ?? '';
-            $uuid = $taskGroupInput['uuid'];
-            $ends_at = $taskGroupInput['ends_at'] ?? null;
-            $next_reset = $taskGroupInput['next_reset'] ?? null;
-            $reset_interval = $taskGroupInput['reset_interval'] ?? null;
-            $updated_at = $taskGroupInput['updated_at'] ?? Carbon::now()->timestamp;
-            $created_at = $taskGroupInput['created_at'] ?? Carbon::now()->timestamp;
+        $taskGroup = TaskGroup::where('uuid', $taskGroupInput['uuid'])->first();
+        $isDeleted = DeletedEntries::where('uuid', $taskGroupInput['uuid'])->exists();
 
-            TaskGroup::create([
-                'title' => $title,
-                'content' => $content,
-                'uuid' => $uuid,
-                'ends_at' => $ends_at,
-                'next_reset' => $next_reset,
-                'reset_interval' => $reset_interval,
-                'user_id' => auth()->user()->id,
-                'updated_at' => $updated_at,
-                'created_at' => $created_at
+        if (!$taskGroup && !$isDeleted) {
+            // Create new task group
+            $taskGroup = TaskGroup::create([
+                'name' => substr($taskGroupInput['name'] ?? '', 0, 50),
+                'description' => substr($taskGroupInput['description'] ?? '', 0, 200),
+                'uuid' => $taskGroupInput['uuid'],
+                'task_statuses' => json_encode($taskGroupInput['task_statuses']) ?? '["Todo", "Doing", "Done"]',
+                'ends_at' => $taskGroupInput['ends_at'] ?? null,
+                'next_reset' => $taskGroupInput['next_reset'] ?? null,
+                'reset_interval' => $taskGroupInput['reset_interval'] ?? null,
+                'user_id' => auth()->id(),
+                'updated_at' => $taskGroupInput['updated_at'] ?? Carbon::now()->toISOString(),
+                'created_at' => $taskGroupInput['created_at'] ?? Carbon::now()->toISOString(),
             ]);
 
-            $task_statuses = $taskGroupInput['task_statuses'] ?? [];
-
-            foreach ($task_statuses as $task_status) {
-                TaskStatus::create([
-                    'task_group_uuid' => $taskGroupInput['uuid'],
-                    'name' => $task_status
-                ]);
-            }
         } elseif ($taskGroup) {
             $oldUpdated = $taskGroup->updated_at;
             $newUpdated = $taskGroupInput['updated_at'] ?? 0;
-            $isNewer = $oldUpdated < $newUpdated;
 
-            if ($isNewer && isset($taskGroupInput['title'])) {
-                $taskGroup->title = substr($taskGroupInput['title'], 0, 100);
+            if ($oldUpdated <= $newUpdated) {
+                $this->updateTaskGroup($taskGroup, $taskGroupInput);
             }
-            if ($isNewer && isset($taskGroupInput['content'])) {
-                $taskGroup->content = $taskGroupInput['content'];
-            }
-
-            if ($isNewer && isset($taskGroupInput['ends_at'])) {
-                $taskGroup->ends_at = $taskGroupInput['ends_at'];
-            }
-
-
-            if ($isNewer && isset($taskGroupInput['next_reset'])) {
-                $taskGroup->next_reset = $taskGroupInput['next_reset'];
-            }
-
-            if ($isNewer && isset($taskGroupInput['reset_interval'])) {
-                $taskGroup->reset_interval = $taskGroupInput['reset_interval'];
-            }
-
-            if ($isNewer && isset($taskGroupInput['task_statuses'])) {
-
-                $task_statuses = $taskGroupInput['task_statuses'] ?? [];
-
-                foreach ($task_statuses as $task_status) {
-                    TaskStatus::create([
-                        'task_group_uuid' => $taskGroup->uuid,
-                        'name' => $task_status
-                    ]);
-                }
-            }
-
-            $taskGroup->save();
         }
+
+        return $taskGroup;
     }
 
+    private function updateTaskGroup(TaskGroup $taskGroup, array $input)
+    {
+        $fields = ['name', 'content', 'ends_at', 'next_reset', 'reset_interval'];
+
+        foreach ($fields as $field) {
+            if (isset($input[$field])) {
+                $taskGroup->{$field} = $field === 'name'
+                    ? substr($input[$field], 0, 50)
+                    : $input[$field];
+            }
+            if (isset($input['description'])) {
+                $taskGroup->{$field} = $field === 'description'
+                    ? substr($input['description'], 0, 200)
+                    : $input['description'];
+            }
+            if (isset($input['task_statuses'])) {
+                $taskGroup->{$field} = $field === 'task_statuses'
+                    ? $input['task_statuses'] = json_encode($input['task_statuses'])
+                    : $input[$field];
+            }
+
+        }
+
+
+        $taskGroup->save();
+    }
     public function deleteTaskGroup(Request $request)
     {
         try {
-            $request->validate(['uuid' => 'string']);
-        } catch (ValidationException $e) {
-            return response()->json($e->errors(), 422);
-        }
+            $request->validate(['uuid' => 'required|uuid']);
 
-        Note::find($request->uuid)->delete();
-        DeletedEntries::create([
-                            'uuid' => $request->uuid,
-                            'type' => 'taskGroup',
-                            'user_id' => auth()->user()->id
-        ]);
-        return response()->json(['message' => 'note deleted'], 200);
+            $taskGroup = TaskGroup::find($request->uuid);
+
+            if (!$taskGroup) {
+                return response()->json(['error' => 'Task group not found'], 404);
+            }
+
+            DB::beginTransaction();
+
+            try {
+                // Find all tasks associated with the task group
+                $tasks = $taskGroup->tasks;
+
+                // Delete the task group
+                $taskGroup->delete();
+
+                // Log the deleted task group in DeletedEntries
+                DeletedEntries::create([
+                    'uuid' => $request->uuid,
+                    'type' => 'taskGroup',
+                    'user_id' => auth()->user()->id,
+                    'updated_at' => Carbon::now()
+                ]);
+
+                // Log each associated task in DeletedEntries
+                foreach ($tasks as $task) {
+                    DeletedEntries::create([
+                        'uuid' => $task->uuid,
+                        'type' => 'task',
+                        'user_id' => auth()->user()->id,
+                        'updated_at' => Carbon::now()
+                    ]);
+
+                    // Delete the task
+                    $task->delete();
+                }
+
+                DB::commit();
+                return response()->json(['message' => 'Task group and associated tasks deleted successfully'], 200);
+
+            } catch (\Exception $e) {
+                DB::rollBack();
+                return response()->json(['error' => 'Failed to delete task group and tasks: ' . $e->getMessage()], 500);
+            }
+
+        } catch (ValidationException $e) {
+            return response()->json(['errors' => $e->errors()], 422);
+        }
     }
 
 

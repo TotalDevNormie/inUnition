@@ -5,7 +5,9 @@ const TAGS = "tags";
 
 type Tag = {
   uuid: string;
-  type: "note" | "task";
+  type: "note" | "taskGroup";
+  created_at: string;
+  updated_at: string;
 };
 
 export type Tags = {

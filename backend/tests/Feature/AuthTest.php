@@ -25,7 +25,6 @@ describe('Register', function () {
             'password_confirmation' => $password,
         ]);
 
-        // $response->dump();
         $response->assertSuccessful();
         $this->assertDatabaseHas('users', [
             'email' => $email,
@@ -43,7 +42,6 @@ describe('Register', function () {
             'password_confirmation' => $password,
         ]);
 
-        // $response->dump();
         $response->assertStatus(400);
         $this->assertDatabaseMissing('users', [
             'email' => $email,
@@ -58,7 +56,6 @@ describe("Login", function () {
 
         $user = User::factory()->create();
 
-        // $token = auth()->tokenById($user->id);
 
         $response = $this->postJson('/api/auth/login', [
             'email' => $user->email,
@@ -66,7 +63,6 @@ describe("Login", function () {
         ]);
 
         $response->assertOk();
-        // $response->dump();
         expect($response->json()['access_token'])->not()->toBeEmpty();
         expect($response->json()['refresh_token'])->not()->toBeEmpty();
     });
@@ -74,16 +70,13 @@ describe("Login", function () {
     it('doesn\'t log in with invalid credentials', function () {
         $user = User::factory()->create();
 
-        // $token = auth()->tokenById($user->id);
 
         $response = $this->postJson('/api/auth/login', [
             'email' => $user->email,
             'password' => 'wrongPassword',
-            // 'token' => $token,
         ]);
 
         $response->assertStatus(401);
-        // $response->dump();
         expect(auth()->user())->toBeEmpty();
     });
 
@@ -133,21 +126,15 @@ describe('Auth guard', function () {
 
 it('refreshes tokens', function () {
     $user = User::factory()->create();
-    $token = auth()->tokenById($user->id);
-    // $userDataResponse = $this->postJson('/api/auth/me', [
-    //     'token' => $token,
-    // ]);
     $authController = new AuthController();
     $refreshToken = $authController->generateRefreshToken($user->id);
     $this->assertDatabaseHas('refresh_tokens', [
         'user_id' => $user->id,
-        'token' => $refreshToken,  // Make sure this matches what is inserted
+        'token' => $refreshToken,
     ]);
-    // print_r($userDataResponse->json());
     $response = $this->postJson('/api/auth/refresh', [
         'refresh_token' => $refreshToken
     ]);
-    $response->dump();
     $response->assertOk();
     expect($response->json()['access_token'])->not()->toBeEmpty();
     expect($response->json()['refresh_token'])->not()->toBe($refreshToken);

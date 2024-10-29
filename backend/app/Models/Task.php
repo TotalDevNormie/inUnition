@@ -13,10 +13,10 @@ class Task extends Model
 
     protected $fillable = [
         'uuid',
-        'title',
+        'name',
         'description',
-        'status_id',
-        'group_id',
+        'status',
+        'task_group_uuid',
         'user_id',
         'created_at',
         'updated_at',

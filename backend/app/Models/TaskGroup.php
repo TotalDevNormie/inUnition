@@ -15,6 +15,8 @@ class TaskGroup extends Model
 
     protected $fillable = [
         'name',
+        'description',
+        'task_statuses',
         'user_id',
         'next_reset',
         'reset_interval',
@@ -34,10 +36,5 @@ class TaskGroup extends Model
     public function tasks()
     {
         return $this->hasMany(Task::class);
-    }
-
-    public function taskStatuses()
-    {
-        return $this->hasMany(TaskStatus::class);
     }
 }

@@ -14,7 +14,13 @@ class NoteController extends Controller
 {
     public function saveNote(Request $request)
     {
-        return $this->save($request->toArray());
+        try {
+            $this->save($request->toArray());
+        } catch (\Exception $e) {
+            return response()->json($e->getMessage(), 422);
+        }
+        return response()->json(['message' => 'notes saved'], 200);
+
     }
 
     public function saveNotes(Request $request)
@@ -28,7 +34,7 @@ class NoteController extends Controller
         foreach ($request->notes as $note) {
             try {
                 $this->save($note);
-            } catch (Exception $e) {
+            } catch (\Exception $e) {
                 return response()->json($e->getMessage(), 422);
             }
         }
@@ -60,13 +66,22 @@ class NoteController extends Controller
         }
 
         $note = Note::find($noteInput['uuid']);
+
         if (!$note && !DeletedEntries::find($noteInput['uuid'])) {
+            // Create new note
             $title = isset($noteInput['title']) ? substr($noteInput['title'], 0, 100) : '';
             $content = $noteInput['content'] ?? '';
             $uuid = $noteInput['uuid'];
-            $ends_at = $noteInput['ends_at'] ?? null;
-            $updated_at = $noteInput['updated_at'] ?? Carbon::now()->timestamp;
-            $created_at = $noteInput['created_at'] ?? Carbon::now()->timestamp;
+            $ends_at = isset($noteInput['ends_at']) ? Carbon::parse($noteInput['ends_at']) : null;
+
+            // Convert timestamps to Carbon instances
+            $updated_at = isset($noteInput['updated_at'])
+                ? Carbon::parse($noteInput['updated_at'])
+                : Carbon::now();
+            $created_at = isset($noteInput['created_at'])
+                ? Carbon::parse($noteInput['created_at'])
+                : Carbon::now();
+
             Note::create([
                 'title' => $title,
                 'content' => $content,
@@ -77,22 +92,27 @@ class NoteController extends Controller
                 'created_at' => $created_at
             ]);
         } elseif ($note) {
-            $oldUpdated = $note->updated_at;
-            $newUpdated = $noteInput['updated_at'] ?? 0;
-            $isNewer = $oldUpdated < $newUpdated;
+            // Update existing note
+            $oldUpdated = $note->updated_at->timestamp;
+            $newUpdated = isset($noteInput['updated_at'])
+                ? Carbon::parse($noteInput['updated_at'])->timestamp
+                : 0;
 
-            if ($isNewer && isset($noteInput['title'])) {
-                $note->title = substr($noteInput['title'], 0, 100);
-            }
-            if ($isNewer && isset($noteInput['content'])) {
-                $note->content = $noteInput['content'];
-            }
+            $isNewer = $oldUpdated <= $newUpdated;
 
-            if ($isNewer && isset($noteInput['ends_at'])) {
-                $note->ends_at = $noteInput['ends_at'];
+            if ($isNewer) {
+                if (isset($noteInput['title'])) {
+                    $note->title = substr($noteInput['title'], 0, 100);
+                }
+                if (isset($noteInput['content'])) {
+                    $note->content = $noteInput['content'];
+                }
+                if (isset($noteInput['ends_at'])) {
+                    $note->ends_at = Carbon::parse($noteInput['ends_at']);
+                }
+                $note->updated_at = Carbon::parse($noteInput['updated_at']);
+                $note->save();
             }
-
-            $note->save();
         }
     }
 
@@ -106,9 +126,9 @@ class NoteController extends Controller
 
         Note::find($request->uuid)->delete();
         DeletedEntries::create([
-                            'uuid' => $request->uuid,
-                            'type' => 'note',
-                            'user_id' => auth()->user()->id
+            'uuid' => $request->uuid,
+            'type' => 'note',
+            'user_id' => auth()->user()->id
         ]);
         return response()->json(['message' => 'note deleted'], 200);
     }

@@ -13,7 +13,7 @@ class NoteTag extends Model
 
     protected $fillable = [
         'tag_id',
-        'note_id'
+        'note_uuid'
     ];
 
     public function note()

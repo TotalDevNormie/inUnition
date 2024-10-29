@@ -15,8 +15,8 @@ return new class () extends Migration {
             $table->timestamps();
             $table->foreignUuid('task_group_uuid')->constrained('task_groups', 'uuid')->cascadeOnDelete();
             $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('status_id')->constrained()->cascadeOnDelete();
-            $table->string('title', 50);
+            $table->string('status', 25);
+            $table->string('name', 50);
             $table->string('description', 200);
         });
     }

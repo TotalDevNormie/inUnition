@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\NoteController;
+use App\Http\Controllers\TagController;
+use App\Http\Controllers\TaskController;
 use App\Http\Controllers\TaskGroupController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
@@ -27,5 +29,17 @@ Route::group(['middleware' => ['api', 'auth']], function () {
         Route::post('/', [TaskGroupController::class, 'getTaskGroups']);
         Route::post('/save', [TaskGroupController::class, 'saveTaskGroup']);
         Route::post('/delete', [TaskGroupController::class, 'deleteTaskGroup']);
+    });
+
+    Route::group(['prefix' => 'tasks'], function () {
+        Route::post('/', [TaskController::class, 'getTasks']);
+        Route::post('/save', [TaskController::class, 'saveTask']);
+        Route::post('/delete', [TaskController::class, 'deleteTask']);
+    });
+
+    Route::group(['prefix' => 'tags'], function () {
+        Route::post('/', [TagController::class, 'getTags']);
+        Route::post('/save', [TagController::class, 'saveTags']);
+        Route::post('/delete', [TagController::class, 'deleteTag']);
     });
 });
