@@ -385,7 +385,9 @@ export async function getTasks(
 		}
 	}
 
-	console.log("from here");
+	console.log("from here", skipDBSync, taskGroupUUID);
+	if (!getFromBuffer && state.isConnected && user && !skipDBSync)
+		console.log("works");
 
 	if (!getFromBuffer && state.isConnected && user && !skipDBSync)
 		getTasksFromDB();
@@ -401,7 +403,6 @@ const getTasksFromDB = async (shouldGetAllTasks = false) => {
 	const user = await AsyncStorage.getItem("user");
 	if (!state.isConnected || !user) return;
 	const lastSync = await AsyncStorage.getItem("lastTaskSync");
-	console.log("lastSync", lastSync);
 	let options: RequestInit = { method: "POST" };
 	if (lastSync && !shouldGetAllTasks) {
 		options.body = JSON.stringify({
@@ -414,6 +415,8 @@ const getTasksFromDB = async (shouldGetAllTasks = false) => {
 			deleted: { uuid: string }[];
 		}>("/tasks", options, true);
 
+		console.log({ tasks, deleted });
+
 		if (tasks.length === 0 && deleted.length === 0) return;
 
 		await Promise.all(deleted.map((entry) => deleteTask(entry.uuid)));
@@ -423,13 +426,19 @@ const getTasksFromDB = async (shouldGetAllTasks = false) => {
 		);
 
 		const filteredTasks = tasks.filter((entry) => {
+			console.log("after deleted");
 			if (deletedEntries.includes(entry.uuid)) return false;
 			const task = allTasks.find((task) => task.uuid === entry.uuid);
+			console.log("after check");
+
 			if (!task || allTasks.length === 0) return true;
+			console.log("after not found");
+
 			return compareTimestamps(task.updated_at, entry.updated_at);
 		});
+		console.log(filteredTasks);
 		for (const entry of filteredTasks)
-			saveTask(entry, entry.taskGroupUUID, entry.uuid, true);
+			saveTask(entry, entry.task_group_uuid, entry.uuid, true);
 		await AsyncStorage.setItem("lastTaskSync", new Date().toISOString());
 	} catch (error) {}
 };

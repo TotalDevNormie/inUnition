@@ -290,7 +290,8 @@ export default function Tasks() {
 	const { data: tasks } = useQuery({
 		queryKey: ["tasks", uuid],
 		queryFn: async () => {
-			return await getTasks(uuid as string, false, true);
+			console.log("called from queryFn");
+			return await getTasks(uuid as string, false, false);
 		},
 	});
 
