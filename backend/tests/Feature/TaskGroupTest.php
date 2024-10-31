@@ -34,6 +34,7 @@ describe("Gets Task Groups", function () {
         $response = withHeader('Authorization', 'Bearer ' . $token)->postJson('/api/task-groups');
 
         $response->assertOk()
+            ->dump()
             ->assertJsonCount(3, 'taskGroups')
             ->assertJsonStructure([
                 'taskGroups' => [

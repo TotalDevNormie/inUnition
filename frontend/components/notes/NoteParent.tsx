@@ -62,11 +62,9 @@ export const NoteParent = ({
 	const [isMarkdown, setIsMarkdown] = useState(false);
 	const queryClient = useQueryClient();
 
-	// Debounce tags and dueDate changes
 	const debouncedTags = useDebounce(tags, 1000);
 	const debouncedDueDate = useDebounce(dueDate, 1000);
 
-	// Track if initial data has been loaded
 	const [isInitialLoad, setIsInitialLoad] = useState(true);
 
 	useEffect(() => {
@@ -114,16 +112,13 @@ export const NoteParent = ({
 		},
 		onSuccess: () => {
 			queryClient.invalidateQueries({ queryKey: ["notes"] });
-			const newUuid = v4();
-			router.replace(`./${newUuid}`);
+			router.back();
 		},
 	});
 
-	// Auto-save effect for tags and dueDate changes
 	useEffect(() => {
 		if (isInitialLoad) return;
 
-		// Only save if we have the necessary data
 		if (noteData) {
 			save({
 				title,

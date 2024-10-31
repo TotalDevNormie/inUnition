@@ -70,11 +70,11 @@ class NoteController extends Controller
         if (!$note && !DeletedEntries::find($noteInput['uuid'])) {
             // Create new note
             $title = isset($noteInput['title']) ? substr($noteInput['title'], 0, 100) : '';
-            $content = $noteInput['content'] ?? '';
+            $content = isset($noteInput['content']) && $noteInput['content'] ?? '';
             $uuid = $noteInput['uuid'];
-            $ends_at = isset($noteInput['ends_at']) ? Carbon::parse($noteInput['ends_at']) : null;
+            $ends_at = isset($noteInput['ends_at']) && $noteInput['ends_at'] ? Carbon::parse($noteInput['ends_at']) : null;
 
-            // Convert timestamps to Carbon instances
+
             $updated_at = isset($noteInput['updated_at'])
                 ? Carbon::parse($noteInput['updated_at'])
                 : Carbon::now();
@@ -92,7 +92,6 @@ class NoteController extends Controller
                 'created_at' => $created_at
             ]);
         } elseif ($note) {
-            // Update existing note
             $oldUpdated = $note->updated_at->timestamp;
             $newUpdated = isset($noteInput['updated_at'])
                 ? Carbon::parse($noteInput['updated_at'])->timestamp
@@ -107,9 +106,7 @@ class NoteController extends Controller
                 if (isset($noteInput['content'])) {
                     $note->content = $noteInput['content'];
                 }
-                if (isset($noteInput['ends_at'])) {
-                    $note->ends_at = Carbon::parse($noteInput['ends_at']);
-                }
+                $note->ends_at = isset($noteInput['ends_at']) && $noteInput['ends_at'] ? Carbon::parse($noteInput['ends_at']) : null;
                 $note->updated_at = Carbon::parse($noteInput['updated_at']);
                 $note->save();
             }

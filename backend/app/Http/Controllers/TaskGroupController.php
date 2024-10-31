@@ -24,8 +24,18 @@ class TaskGroupController extends Controller
             $deletedQuery = $deletedQuery->where('updated_at', '>=', $timestamp);
         }
 
+        $taskGroups = [];
+
+        foreach ($taskGroupsQuery->get() as $taskGroup) {
+            $taskGroupArray = $taskGroup->toArray();
+            $taskGroups[] = [
+                ...$taskGroupArray,
+                'task_statuses' => json_decode($taskGroupArray['task_statuses']),
+            ];
+        }
+
         return response()->json([
-            'taskGroups' => $taskGroupsQuery->get(),
+            'taskGroups' => $taskGroups,
             'deleted' => $deletedQuery->get()
         ], 200);
     }
@@ -35,7 +45,7 @@ class TaskGroupController extends Controller
         try {
             $validated = $request->validate([
                 'uuid' => 'required|uuid',
-                'task_statuses' => 'required|array',
+                'task_statuses' => 'nullable|array',
                 'name' => 'nullable|string',
                 'description' => 'nullable|string',
                 'ends_at' => 'nullable|date',
@@ -97,27 +107,26 @@ class TaskGroupController extends Controller
 
     private function updateTaskGroup(TaskGroup $taskGroup, array $input)
     {
-        $fields = ['name', 'content', 'ends_at', 'next_reset', 'reset_interval'];
-
-        foreach ($fields as $field) {
-            if (isset($input[$field])) {
-                $taskGroup->{$field} = $field === 'name'
-                    ? substr($input[$field], 0, 50)
-                    : $input[$field];
-            }
-            if (isset($input['description'])) {
-                $taskGroup->{$field} = $field === 'description'
-                    ? substr($input['description'], 0, 200)
-                    : $input['description'];
-            }
-            if (isset($input['task_statuses'])) {
-                $taskGroup->{$field} = $field === 'task_statuses'
-                    ? $input['task_statuses'] = json_encode($input['task_statuses'])
-                    : $input[$field];
-            }
+        if (isset($input['name'])) {
+            $taskGroup->name = substr($input['name'], 0, 50);
+        }
+        if (isset($input['description'])) {
+            $taskGroup->description = substr($input['description'], 0, 200);
 
         }
+        if (isset($input['task_statuses'])) {
+            $taskGroup->task_statuses = json_encode($input['task_statuses']);
+        }
 
+        if (isset($input['ends_at'])) {
+            $taskGroup->ends_at = $input['ends_at'] ? Carbon::parse($input['ends_at']) : null;
+        }
+        if (isset($input['next_reset'])) {
+            $taskGroup->next_reset = $input['next_reset'];
+        }
+        if (isset($input['reset_interval'])) {
+            $taskGroup->reset_interval = $input['reset_interval'];
+        }
 
         $taskGroup->save();
     }

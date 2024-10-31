@@ -42,7 +42,7 @@ describe('Register', function () {
             'password_confirmation' => $password,
         ]);
 
-        $response->assertStatus(400);
+        $response->assertStatus(422);
         $this->assertDatabaseMissing('users', [
             'email' => $email,
         ]);
