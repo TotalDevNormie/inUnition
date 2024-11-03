@@ -18,11 +18,19 @@ As of now it is in development.
 - [ ] web sidebar
 - [x] login / register page
 - [x] offline first login
+- [ ] markdown input
+- [ ] web responsive
+- [ ] web hosting
+- [ ] android apk on github
+
 
 ### Backend
 
 - [x] Add authentication system
+- [ ] tag sync
+- [ ] look into web sockets again
+
 
 ### Edge cases
 
-- [ ] swithching user
+- [x] swithching user
