@@ -1,27 +1,32 @@
-import { Link } from "expo-router";
-import { View, Text } from "react-native";
+import { Link, router } from "expo-router";
+import { useEffect, useRef } from "react";
+import { View, Text, Pressable } from "react-native";
 
 type NavLinkProps = {
   href: string;
   className?: string;
   children?: React.ReactNode;
   icon: React.ReactNode;
+  collapsed?: boolean;
 };
 export default function NavLink({
   href,
   className,
   children,
   icon,
+  collapsed = false,
 }: NavLinkProps) {
   return (
-    <Link href={href}>
-      <View
-        className={`p-2 rounded-lg color-text flex flex-row gap-2 items-center ${className}`}
-      >
-        <Text className="color-text">{icon}</Text>
-        {children && <Text className="color-text">{children}</Text>}
-      </View>
-    </Link>
+    <Pressable
+      onPress={() => router.push(href)}
+      className={`p-2 rounded-lg color-text flex flex-row flex-1 gap-2 items-center ease duration-300 ${className}`}
+    >
+      <Text className="color-text">{icon}</Text>
+      {children && !collapsed && (
+        <Text className={`text-nowrap text-text overflow-hidden ${""}`}>
+          {children}
+        </Text>
+      )}
+    </Pressable>
   );
 }
-

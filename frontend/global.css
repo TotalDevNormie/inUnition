@@ -2,6 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
+* {
+  box-sizing: border-box;
+}
+
 body {
   /* @apply bg-background;
     @apply text-text; */
@@ -13,6 +17,7 @@ body {
   flex-grow: 1;
 }
 
-input:focus, textarea:focus {
+input:focus,
+textarea:focus {
   outline: none;
 }
