@@ -1,10 +1,11 @@
-import { Link, Navigator, Slot } from "expo-router";
-import { Pressable, useColorScheme, View } from "react-native";
-import DarkLogoFull from "../assets/darkLogoFull.svg";
-import { TabRouter } from "@react-navigation/native";
-import NavLink from "./NavLink";
-import { Feather, Ionicons, MaterialIcons, Octicons } from "@expo/vector-icons";
-import { useState } from "react";
+import { Link, Navigator, Slot } from 'expo-router';
+import { Pressable, useColorScheme, View } from 'react-native';
+import DarkLogoFull from '../assets/darkLogoFull.svg';
+import { TabRouter } from '@react-navigation/native';
+import NavLink from './NavLink';
+import { Feather, Ionicons, MaterialIcons, Octicons } from '@expo/vector-icons';
+import { useState } from 'react';
+import { useAuth } from './auth/AuthContext';
 
 export default function WebTabLayout() {
   return (
@@ -21,6 +22,7 @@ export default function WebTabLayout() {
 
 const Header = () => {
   const theme = useColorScheme();
+  const { user, isLoadingUser } = useAuth();
 
   const [collapsed, setCollapsed] = useState(false);
 
@@ -31,10 +33,10 @@ const Header = () => {
           <Pressable
             onPress={() => setCollapsed(!collapsed)}
             className={`text-nowrap overflow-hidden ease duration-300 ${
-              collapsed ? "w-0" : "w-40"
+              collapsed ? 'w-0' : 'w-40'
             }`}
           >
-            <DarkLogoFull width={"100%"} className="text-3xl" />
+            <DarkLogoFull width={'100%'} className="text-3xl" />
           </Pressable>
 
           <Pressable className="flex " onPress={() => setCollapsed(!collapsed)}>
@@ -42,7 +44,7 @@ const Header = () => {
               name="keyboard-arrow-right"
               size={24}
               className={`text-text ease duration-300 ${
-                collapsed ? "rotate-180" : ""
+                collapsed ? 'rotate-180' : ''
               }`}
             />
           </Pressable>

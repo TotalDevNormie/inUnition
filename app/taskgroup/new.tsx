@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState } from 'react';
 import {
   Platform,
   Pressable,
@@ -6,17 +6,17 @@ import {
   TextInput,
   TouchableOpacity,
   View,
-} from "react-native";
+} from 'react-native';
 import DraggableFlatList, {
   ScaleDecorator,
-} from "react-native-draggable-flatlist";
-import { TagsInput } from "../../components/TagsInput";
-import { useMutation } from "@tanstack/react-query";
-import { createTaskGroup } from "../../utils/manageTasks";
-import { useRouter } from "expo-router";
-import { GestureHandlerRootView } from "react-native-gesture-handler";
-import DraggableList from "react-draggable-list";
-import { AntDesign, MaterialCommunityIcons } from "@expo/vector-icons";
+} from 'react-native-draggable-flatlist';
+import { TagsInput } from '../../components/TagsInput';
+import { useMutation } from '@tanstack/react-query';
+import { useRouter } from 'expo-router';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import DraggableList from 'react-draggable-list';
+import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useTaskBoardStore } from '../../utils/manageTaskBoards';
 
 type ListItemProps = {
   dragHandleProps?: any;
@@ -55,7 +55,7 @@ const ListItem = ({
       )}
       <Pressable onPress={() => handleEditing(item)}>
         <Text className="text-text">
-          <AntDesign name={editing === item ? "check" : "edit"} size={24} />
+          <AntDesign name={editing === item ? 'check' : 'edit'} size={24} />
         </Text>
       </Pressable>
       <Pressable onPress={() => deleteStatus(item)}>
@@ -68,50 +68,53 @@ const ListItem = ({
 };
 
 export default function Task() {
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
-  const [newStatus, setNewStatus] = useState("");
-  const [statuses, setStatuses] = useState(["Todo", "Doing", "Done"]);
+  const [name, setName] = useState('');
+  const [description, setDescription] = useState('');
+  const [newStatus, setNewStatus] = useState('');
+  const [statusTypes, setStatusTypes] = useState(['Todo', 'Doing', 'Done']);
   const [editing, setEditing] = useState<string | false>(false);
-  const [editingStatus, setEditingStatus] = useState("");
+  const [editingStatus, setEditingStatus] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const router = useRouter();
 
-  const { mutate } = useMutation({
-    mutationKey: ["tasks"],
-    mutationFn: async () => {
-      return await createTaskGroup(name, description, statuses, tags);
-    },
-    onSuccess: (uuid) => {
-      console.log("Task created successfully", uuid);
-      router.replace("./" + uuid);
-    },
-    onError: (error) => {
-      console.log("Error creating task:", error);
-    },
-  });
+  const { saveTaskBoard } = useTaskBoardStore();
+
+  const handleSubmit = async () => {
+    try {
+      const uuid = await saveTaskBoard({
+        name,
+        description,
+        statusTypes,
+        tags,
+      });
+      console.log(uuid);
+      router.push(`/taskgroup/${uuid}`);
+    } catch (error) {
+      console.error('Failed to create task board:', error);
+    }
+  };
 
   const handleNewStatus = () => {
-    if (newStatus === "") return;
-    setStatuses([...new Set([...statuses, newStatus])].slice(0, 5));
-    setNewStatus("");
+    if (newStatus === '') return;
+    setStatusTypes([...new Set([...statusTypes, newStatus])].slice(0, 5));
+    setNewStatus('');
   };
 
   const deleteStatus = (status: string) => {
-    if (statuses.length === 2) return;
-    setStatuses(statuses.filter((s) => s !== status));
+    if (statusTypes.length === 2) return;
+    setStatusTypes(statusTypes.filter((s) => s !== status));
   };
 
   const handleEditing = (status: string) => {
     if (editing) {
-      setStatuses(
-        statuses.map((s: string): string =>
+      setStatusTypes(
+        statusTypes.map((s: string): string =>
           s === editing && editingStatus ? editingStatus : s,
         ),
       );
       if (editing == status) {
         setEditing(false);
-        setEditingStatus("");
+        setEditingStatus('');
         return;
       }
     }
@@ -161,11 +164,11 @@ export default function Task() {
             </Pressable>
           </View>
           <View className="z-30">
-            {Platform.OS === "web" ? (
+            {Platform.OS === 'web' ? (
               <DraggableList
                 itemKey={(item: string) => item}
-                list={statuses}
-                onMoveEnd={(list) => setStatuses(list)}
+                list={statusTypes}
+                onMoveEnd={(list: string[]) => setStatusTypes(list)}
                 template={({ item, dragHandleProps }) => (
                   <ListItem
                     {...{
@@ -182,7 +185,7 @@ export default function Task() {
               />
             ) : (
               <DraggableFlatList
-                data={statuses}
+                data={statusTypes}
                 renderItem={({ item, drag, isActive }) => (
                   <ScaleDecorator activeScale={1.05}>
                     <TouchableOpacity onLongPress={drag} disabled={isActive}>
@@ -200,7 +203,7 @@ export default function Task() {
                     </TouchableOpacity>
                   </ScaleDecorator>
                 )}
-                onDragEnd={({ data }) => setStatuses(data)}
+                onDragEnd={({ data }) => setStatusTypes(data)}
                 keyExtractor={(item) => item}
               />
             )}
@@ -210,7 +213,7 @@ export default function Task() {
         <TagsInput tags={tags} setTags={setTags} />
 
         <Pressable
-          onPress={() => mutate()}
+          onPress={() => handleSubmit()}
           className=" bg-primary p-2 rounded-lg text-center"
         >
           <Text className="text-background text-center">Create</Text>

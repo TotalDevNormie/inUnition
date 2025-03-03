@@ -1,20 +1,20 @@
-import React from "react";
+import React from 'react';
 import {
   Text,
   TouchableWithoutFeedback,
   View,
   Platform,
   StyleSheet,
-} from "react-native";
-import FitImage from "react-native-fit-image";
-import { Linking } from "react-native";
+} from 'react-native';
+import FitImage from 'react-native-fit-image';
+import { Linking } from 'react-native';
 
 // the code was taken from react-native-markdown-display (https://github.com/iamacup/react-native-markdown-display/blob/master/src/lib/renderRules.js)
 
 function openUrl(url, customCallback) {
   if (customCallback) {
     const result = customCallback(url);
-    if (url && result && typeof result === "boolean") {
+    if (url && result && typeof result === 'boolean') {
       Linking.openURL(url);
     }
   } else if (url) {
@@ -23,25 +23,25 @@ function openUrl(url, customCallback) {
 }
 
 const textStyleProps = [
-  "textShadowOffset",
-  "color",
-  "fontSize",
-  "fontStyle",
-  "fontWeight",
-  "lineHeight",
-  "textAlign",
-  "textDecorationLine",
-  "textShadowColor",
-  "fontFamily",
-  "textShadowRadius",
-  "includeFontPadding",
-  "textAlignVertical",
-  "fontVariant",
-  "letterSpacing",
-  "textDecorationColor",
-  "textDecorationStyle",
-  "textTransform",
-  "writingDirection",
+  'textShadowOffset',
+  'color',
+  'fontSize',
+  'fontStyle',
+  'fontWeight',
+  'lineHeight',
+  'textAlign',
+  'textDecorationLine',
+  'textShadowColor',
+  'fontFamily',
+  'textShadowRadius',
+  'includeFontPadding',
+  'textAlignVertical',
+  'fontVariant',
+  'letterSpacing',
+  'textDecorationColor',
+  'textDecorationStyle',
+  'textTransform',
+  'writingDirection',
 ];
 
 function hasParents(parents, type) {
@@ -103,7 +103,7 @@ const markdownRules = {
   hr: (node, children, parent, styles) => (
     <View
       key={node.key}
-      style={{ ...styles._VIEW_SAFE_hr, backgroundColor: "#313749" }}
+      style={{ ...styles._VIEW_SAFE_hr, backgroundColor: '#313749' }}
       className="!h-[2px] !bg-secondary rounded-xl"
     />
   ),
@@ -171,7 +171,7 @@ const markdownRules = {
       }
     }
 
-    if (hasParents(parent, "bullet_list")) {
+    if (hasParents(parent, 'bullet_list')) {
       return (
         <View key={node.key} style={styles._VIEW_SAFE_list_item}>
           <Text
@@ -180,9 +180,9 @@ const markdownRules = {
             className="!text-text"
           >
             {Platform.select({
-              android: "\u2022",
-              ios: "\u00B7",
-              default: "\u2022",
+              android: '\u2022',
+              ios: '\u00B7',
+              default: '\u2022',
             })}
           </Text>
           <View style={styles._VIEW_SAFE_bullet_list_content}>{children}</View>
@@ -190,9 +190,9 @@ const markdownRules = {
       );
     }
 
-    if (hasParents(parent, "ordered_list")) {
+    if (hasParents(parent, 'ordered_list')) {
       const orderedListIndex = parent.findIndex(
-        (el) => el.type === "ordered_list",
+        (el) => el.type === 'ordered_list',
       );
 
       const orderedList = parent[orderedListIndex];
@@ -241,8 +241,8 @@ const markdownRules = {
     let { content } = node;
 
     if (
-      typeof node.content === "string" &&
-      node.content.charAt(node.content.length - 1) === "\n"
+      typeof node.content === 'string' &&
+      node.content.charAt(node.content.length - 1) === '\n'
     ) {
       content = node.content.substring(0, node.content.length - 1);
     }
@@ -262,8 +262,8 @@ const markdownRules = {
     let { content } = node;
 
     if (
-      typeof node.content === "string" &&
-      node.content.charAt(node.content.length - 1) === "\n"
+      typeof node.content === 'string' &&
+      node.content.charAt(node.content.length - 1) === '\n'
     ) {
       content = node.content.substring(0, node.content.length - 1);
     }
@@ -355,14 +355,13 @@ const markdownRules = {
     if (show === false && defaultImageHandler === null) {
       return null;
     }
-    console.log(src);
 
     const imageProps = {
       indicator: true,
       key: node.key,
       style: { flex: 1 },
-      resizeMode: "cover",
-      className: "w-80",
+      resizeMode: 'cover',
+      className: 'w-80',
       source: {
         uri: show === true ? src : `${defaultImageHandler}${src}`,
       },
@@ -372,8 +371,6 @@ const markdownRules = {
       imageProps.accessible = true;
       imageProps.accessibilityLabel = alt;
     }
-
-    console.log(imageProps);
 
     return (
       <View className="flex grow h-80 flex-row" key={node.key}>
@@ -404,12 +401,12 @@ const markdownRules = {
   ),
   hardbreak: (node, children, parent, styles) => (
     <Text key={node.key} style={styles.hardbreak}>
-      {"\n"}
+      {'\n'}
     </Text>
   ),
   softbreak: (node, children, parent, styles) => (
     <Text key={node.key} style={styles.softbreak}>
-      {"\n"}
+      {'\n'}
     </Text>
   ),
 

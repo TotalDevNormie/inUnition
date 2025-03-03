@@ -1,282 +1,314 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { createContext, useContext, useEffect, useState } from "react";
-import NetInfo from "@react-native-community/netinfo";
-import { Platform } from "react-native";
-import { jwtDecode } from "jwt-decode";
-import sendRequest, { RequestError } from "../../utils/sendrequest";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as SecureStore from "expo-secure-store";
-import { deleteAllLocalTasks } from "../../utils/manageTasks";
-import { deleteAllLocalTags } from "../../utils/manageTags";
-import { deleteAllLocalNotes } from "../../utils/manageNotes";
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+import NetInfo from '@react-native-community/netinfo';
+import { Platform } from 'react-native';
+import { MMKV } from 'react-native-mmkv';
+import {
+  getAuth,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  updateProfile,
+  User as FirebaseUser,
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence,
+  inMemoryPersistence,
+  GoogleAuthProvider,
+  signInWithCredential,
+} from 'firebase/auth';
+import { doc, setDoc, getFirestore, getDoc } from 'firebase/firestore';
+import { app } from '../../firebaseConfig';
+import * as Google from 'expo-auth-session/providers/google';
+import * as WebBrowser from 'expo-web-browser';
 
-const AuthContext = createContext(null);
+// Initialize Firebase
+const auth = getAuth(app);
+const db = getFirestore(app);
 
-type AuthContextType = {
-	user: any;
-	isLoadingUser: boolean;
-	loginMutation: any;
-	registerMutation: any;
-	logoutMutation: any;
-	isOnline: boolean;
-};
+// Initialize MMKV storage
+const storage = new MMKV();
 
-export type CredentialsType = {
-	name: string;
-	email: string;
-	password: string;
-	password_confirmation: string;
-};
+// Register for redirect URI
+WebBrowser.maybeCompleteAuthSession();
 
-export type LoginCredentaialsType = Pick<CredentialsType, "email" | "password">;
+// Set persistence based on platform
+setPersistence(
+  auth,
+  Platform.OS === 'web' ? browserLocalPersistence : inMemoryPersistence,
+);
 
-type UserResponseType = {
-	user: User | null;
-	access_token: string | null;
-	refresh_token: string | null;
-};
+const AUTH_PERSISTENCE_KEY = 'auth_persistence';
+const AUTH_EXPIRY_KEY = 'auth_expiry';
+const OFFLINE_EXPIRY_DAYS = 14;
 
 type User = {
-	name: string;
-	email: string;
-	created_at: string;
-	updated_at: string;
+  name: string;
+  email: string;
+  createdAt: string;
+  updatedAt: string;
+  uid: string;
+  photoURL?: string;
 };
 
-export const AuthProvider = ({ children }) => {
-	const [user, setUser] = useState<User | null>(null);
-	const [isOnline, setIsOnline] = useState(true);
-	const queryClient = useQueryClient();
-
-	useEffect(() => {
-		const unsubscribe = NetInfo.addEventListener((state) => {
-			setIsOnline(state.isConnected as boolean);
-		});
-
-		return () => unsubscribe();
-	}, []);
-
-	const { isLoading: isLoadingUser, error: userError } = useQuery({
-		queryKey: ["user"],
-		retry: 0,
-
-		queryFn: async () => {
-			let accessToken: string | null = null;
-			let refreshToken: string | null = null;
-
-			let user = null;
-			try {
-				const userData = await AsyncStorage.getItem("user");
-
-				if (userData !== null) {
-					user = JSON.parse(userData);
-				}
-			} catch (err) {}
-
-			if (user) {
-				setUser(user);
-			}
-			if (!isOnline) return;
-
-			if (Platform.OS === "web") {
-				accessToken = await AsyncStorage.getItem("access_token");
-				refreshToken = await AsyncStorage.getItem("refresh_token");
-			} else {
-				accessToken = SecureStore.getItem("access_token");
-				refreshToken = SecureStore.getItem("refresh_token");
-			}
-
-			if (!accessToken && !refreshToken) {
-				setUser(null);
-				await AsyncStorage.removeItem("user");
-
-				throw {
-					message: "No access token or refresh token found",
-				} as RequestError;
-			}
-
-			if (!accessToken) return;
-
-			const decodedAccessToken = jwtDecode(accessToken);
-
-			if (
-				decodedAccessToken.exp &&
-				decodedAccessToken.exp * 1000 < Date.now() &&
-				refreshToken
-			) {
-				try {
-					const newTokenData = await sendRequest<UserResponseType>(
-						"/auth/refresh",
-						{
-							method: "POST",
-							body: JSON.stringify({
-								refresh_token: refreshToken,
-							}),
-						}
-					);
-					if (
-						!newTokenData.access_token ||
-						!newTokenData.refresh_token
-					)
-						return;
-					if (Platform.OS === "web") {
-						AsyncStorage.setItem(
-							"access_token",
-							newTokenData.access_token
-						);
-						AsyncStorage.setItem(
-							"refresh_token",
-							newTokenData.refresh_token
-						);
-					} else {
-						SecureStore.setItem(
-							"access_token",
-							newTokenData.access_token
-						);
-						SecureStore.setItem(
-							"refresh_token",
-							newTokenData.refresh_token
-						);
-					}
-				} catch (err) {
-					setUser(null);
-					await AsyncStorage.removeItem("user");
-
-					if (Platform.OS === "web") {
-						AsyncStorage.removeItem("access_token");
-						AsyncStorage.removeItem("refresh_token");
-					} else {
-						await SecureStore.deleteItemAsync("access_token");
-						await SecureStore.deleteItemAsync("refresh_token");
-					}
-					throw {
-						message: "No access token or refresh token found",
-					} as RequestError;
-				}
-			}
-
-			const data = await sendRequest<UserResponseType>("/auth/me", {
-				method: "POST",
-				body: JSON.stringify({ token: accessToken }),
-			});
-
-			AsyncStorage.setItem("user", JSON.stringify(data.user));
-			setUser(data.user);
-			return data.user;
-		},
-	});
-
-	const loginMutation = useMutation({
-		mutationKey: ["user"],
-
-		mutationFn: async (requset: LoginCredentaialsType) => {
-			const data = await sendRequest<UserResponseType>("/auth/login", {
-				method: "POST",
-				body: JSON.stringify(requset),
-			});
-
-			setUser(data.user);
-			AsyncStorage.setItem("user", JSON.stringify(data.user));
-
-			if (data.access_token && data.refresh_token) {
-				if (Platform.OS === "web") {
-					AsyncStorage.setItem("access_token", data.access_token);
-					AsyncStorage.setItem("refresh_token", data.refresh_token);
-				} else {
-					SecureStore.setItem("access_token", data.access_token);
-					SecureStore.setItem("refresh_token", data.refresh_token);
-				}
-			}
-
-			return data.user;
-		},
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["user"] });
-		},
-	});
-
-	const registerMutation = useMutation({
-		mutationKey: ["user"],
-		mutationFn: async (requset: CredentialsType) => {
-			const data = await sendRequest<UserResponseType>("/auth/register", {
-				method: "POST",
-				body: JSON.stringify(requset),
-			});
-
-			setUser(data.user as User);
-			AsyncStorage.setItem("user", JSON.stringify(data.user));
-			if (data.access_token && data.refresh_token) {
-				if (Platform.OS === "web") {
-					AsyncStorage.setItem("access_token", data.access_token);
-					AsyncStorage.setItem("refresh_token", data.refresh_token);
-				} else {
-					SecureStore.setItem("access_token", data.access_token);
-					SecureStore.setItem("refresh_token", data.refresh_token);
-				}
-			}
-			return data.user;
-		},
-
-		onSuccess: () => {
-			queryClient.invalidateQueries({ queryKey: ["user"] });
-		},
-	});
-
-	const logoutMutation = useMutation({
-		mutationKey: ["user"],
-		mutationFn: async () => {
-			let accessToken: string | null;
-			if (Platform.OS === "web") {
-				accessToken = AsyncStorage.getItem("access_token");
-			} else {
-				accessToken = SecureStore.getItem("access_token");
-			}
-			if (!accessToken) null;
-			await sendRequest(
-				"/auth/logout",
-				{
-					method: "POST",
-					body: JSON.stringify({ token: accessToken }),
-				},
-				true
-			);
-			return null;
-		},
-
-		onSuccess: async () => {
-			setUser(null);
-			if (Platform.OS === "web") {
-				AsyncStorage.removeItem("access_token");
-				AsyncStorage.removeItem("refresh_token");
-			} else {
-				await SecureStore.deleteItemAsync("acces_token");
-				await SecureStore.deleteItemAsync("refresh_token");
-			}
-			deleteAllLocalTasks();
-			deleteAllLocalTags();
-			deleteAllLocalNotes();
-			queryClient.clear();
-		},
-	});
-
-	const value = {
-		user,
-		isLoadingUser,
-		loginMutation,
-		registerMutation,
-		logoutMutation,
-		isOnline,
-	} as AuthContextType;
-
-	return (
-		<AuthContext.Provider value={value}>{children}</AuthContext.Provider>
-	);
+type CredentialsType = {
+  name: string;
+  email: string;
+  password: string;
+  password_confirmation: string;
 };
 
-export const useAuth = () => {
-	const context = useContext<AuthContextType | null>(AuthContext);
-	if (context === null) {
-		throw new Error("useAuth must be used within an AuthProvider");
-	}
-	return context;
+type LoginCredentialsType = Pick<CredentialsType, 'email' | 'password'>;
+
+const createUserObject = (firebaseUser: FirebaseUser): User => {
+  return {
+    name: firebaseUser.displayName || '',
+    email: firebaseUser.email || '',
+    uid: firebaseUser.uid,
+    createdAt: firebaseUser.metadata.creationTime || new Date().toISOString(),
+    updatedAt: firebaseUser.metadata.lastSignInTime || new Date().toISOString(),
+    photoURL: firebaseUser.photoURL || undefined,
+  };
 };
+
+const useAuthStore = create(
+  persist(
+    (set) => ({
+      user: null,
+      isLoadingUser: true,
+      isOnline: true,
+      lastSyncTime: null,
+
+      // Initialize
+      init: () => {
+        const request = Google.useAuthRequest({
+          clientId:
+            Platform.OS === 'ios'
+              ? GOOGLE_IOS_CLIENT_ID
+              : Platform.OS === 'android'
+                ? GOOGLE_ANDROID_CLIENT_ID
+                : GOOGLE_WEB_CLIENT_ID,
+          scopes: ['profile', 'email'],
+        });
+
+        const handleGoogleSignInResponse = async () => {
+          if (response?.type === 'success') {
+            try {
+              const { id_token } = response.params;
+              const credential = GoogleAuthProvider.credential(id_token);
+              const userCredential = await signInWithCredential(
+                auth,
+                credential,
+              );
+              const firebaseUser = userCredential.user;
+
+              const userRef = doc(db, 'users', firebaseUser.uid);
+              const userDoc = await getDoc(userRef);
+
+              if (!userDoc.exists()) {
+                await setDoc(userRef, {
+                  name: firebaseUser.displayName || '',
+                  email: firebaseUser.email || '',
+                  photoURL: firebaseUser.photoURL || '',
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                });
+              } else {
+                await setDoc(
+                  userRef,
+                  {
+                    updatedAt: new Date().toISOString(),
+                  },
+                  { merge: true },
+                );
+              }
+
+              const userObject = createUserObject(firebaseUser);
+              set({ user: userObject, lastSyncTime: new Date() });
+              storage.set(AUTH_PERSISTENCE_KEY, JSON.stringify(userObject));
+            } catch (error) {
+              console.error('Google sign in error:', error);
+              throw error;
+            }
+          }
+        };
+
+        if (response) {
+          handleGoogleSignInResponse();
+        }
+      },
+
+      // Load user data
+      loadUserData: async () => {
+        set({ isLoadingUser: true });
+        try {
+          const persistedData = storage.getString(AUTH_PERSISTENCE_KEY);
+          if (persistedData) {
+            const authData = JSON.parse(persistedData);
+            const expiryDate = new Date(authData.expiryDate);
+            if (expiryDate > new Date()) {
+              set({ user: authData.user, isLoadingUser: false });
+              return;
+            }
+          }
+
+          if (!get((state) => state.isOnline)) {
+            set({ user: null, isLoadingUser: false });
+            return;
+          }
+
+          const unsubscribe = onAuthStateChanged(
+            auth,
+            (firebaseUser) => {
+              if (firebaseUser) {
+                const userObject = createUserObject(firebaseUser);
+                set({ user: userObject, isLoadingUser: false });
+                storage.set(AUTH_PERSISTENCE_KEY, JSON.stringify(userObject));
+                set({ lastSyncTime: new Date() });
+              } else {
+                set({ user: null, isLoadingUser: false });
+                storage.delete(AUTH_PERSISTENCE_KEY);
+                storage.delete(AUTH_EXPIRY_KEY);
+              }
+            },
+            (error) => {
+              console.error('Auth state error:', error);
+              set({ user: null, isLoadingUser: false });
+            },
+          );
+
+          return () => unsubscribe();
+        } catch (error) {
+          console.error('Error loading user data:', error);
+          set({ user: null, isLoadingUser: false });
+        }
+      },
+
+      // Network status monitoring
+      setupNetworkListener: () => {
+        const unsubscribe = NetInfo.addEventListener((state) => {
+          const newIsOnline = !!state.isConnected;
+
+          if (newIsOnline && !get((state) => state.isOnline)) {
+            get((state) => state.loadUserData)();
+          }
+
+          set({ isOnline: newIsOnline });
+        });
+
+        return () => unsubscribe();
+      },
+
+      // Login
+      login: async (credentials: LoginCredentialsType) => {
+        if (!get((state) => state.isOnline)) {
+          throw new Error('Initial login requires an internet connection');
+        }
+
+        try {
+          const { user: firebaseUser } = await signInWithEmailAndPassword(
+            auth,
+            credentials.email,
+            credentials.password,
+          );
+
+          const userObject = createUserObject(firebaseUser);
+          set({ user: userObject });
+          storage.set(AUTH_PERSISTENCE_KEY, JSON.stringify(userObject));
+          set({ lastSyncTime: new Date() });
+          return userObject;
+        } catch (error) {
+          console.error('Login error:', error);
+          throw error;
+        }
+      },
+
+      // Register
+      register: async (credentials: CredentialsType) => {
+        if (!get((state) => state.isOnline)) {
+          throw new Error('Registration requires an internet connection');
+        }
+
+        if (credentials.password !== credentials.password_confirmation) {
+          throw new Error('Passwords do not match');
+        }
+
+        try {
+          const { user: firebaseUser } = await createUserWithEmailAndPassword(
+            auth,
+            credentials.email,
+            credentials.password,
+          );
+
+          await updateProfile(firebaseUser, {
+            displayName: credentials.name,
+          });
+
+          const userRef = doc(db, 'users', firebaseUser.uid);
+          await setDoc(userRef, {
+            name: credentials.name,
+            email: credentials.email,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+          });
+
+          const userObject = createUserObject(firebaseUser);
+          set({ user: userObject });
+          storage.set(AUTH_PERSISTENCE_KEY, JSON.stringify(userObject));
+          set({ lastSyncTime: new Date() });
+          return userObject;
+        } catch (error) {
+          console.error('Registration error:', error);
+          throw error;
+        }
+      },
+
+      // Logout
+      logout: async () => {
+        try {
+          if (get((state) => state.isOnline)) {
+            await signOut(auth);
+          }
+
+          set({ user: null, lastSyncTime: null });
+          storage.delete(AUTH_PERSISTENCE_KEY);
+          storage.delete(AUTH_EXPIRY_KEY);
+          // Add your delete local data functions here
+        } catch (error) {
+          console.error('Logout error:', error);
+          throw error;
+        }
+      },
+
+      // Google Sign In
+      signInWithGoogle: async () => {
+        if (!get((state) => state.isOnline)) {
+          throw new Error('Google sign-in requires an internet connection');
+        }
+
+        try {
+          const { promptAsync } = Google.useAuthRequest({
+            clientId:
+              Platform.OS === 'ios'
+                ? GOOGLE_IOS_CLIENT_ID
+                : Platform.OS === 'android'
+                  ? GOOGLE_ANDROID_CLIENT_ID
+                  : GOOGLE_WEB_CLIENT_ID,
+            scopes: ['profile', 'email'],
+          });
+
+          await promptAsync();
+        } catch (error) {
+          console.error('Google sign in prompt error:', error);
+          throw error;
+        }
+      },
+    }),
+    {
+      name: 'auth', // name of the store
+      getStorage: () => storage, // MMKV storage
+    },
+  ),
+);
+
+export const useAuth = () => useAuthStore();

@@ -1,36 +1,23 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
-import { NoteParent } from "../../components/notes/NoteParent";
-import { useCallback, useEffect, useRef, useState } from "react";
-import NoteInput from "../../components/notes/NoteInput";
-import Ionicons from "@expo/vector-icons/Ionicons";
-import BottomSheet, { BottomSheetView } from "@gorhom/bottom-sheet";
-import { TagsInput } from "../../components/TagsInput";
-import DueDateInput from "../../components/DueDateInput";
-import { AntDesign, Entypo, FontAwesome5 } from "@expo/vector-icons";
-import { router } from "expo-router";
-import "react-native-get-random-values";
-import { v4 } from "uuid";
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { NotePage, NoteParent } from '../../components/notes/NoteParent';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import NoteInput from '../../components/notes/NoteInput';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import { TagsInput } from '../../components/TagsInput';
+import DueDateInput from '../../components/DueDateInput';
+import { AntDesign, Entypo, FontAwesome5 } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import 'react-native-get-random-values';
+import { v4 } from 'uuid';
+import { useNoteStore } from '../../utils/manageNotes';
 
-export default function Note() {
-  return <NoteParent {...{ NotePageContent }} />;
-}
+const Note = () => <NoteParent NotePageContent={NotePageContent} />;
 
-const NotePageContent = ({
-  content,
-  setContent,
-  title,
-  setTitle,
-  handleSave,
-  isMarkdown,
-  setIsMarkdown,
-  tags,
-  setTags,
-  dueDate,
-  setDueDate,
-  handleDelete,
-}) => {
+const NotePageContent: NotePage = ({ uuid }) => {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { deleteNote } = useNoteStore();
 
   useEffect(() => {
     if (settingsOpen) {
@@ -40,9 +27,8 @@ const NotePageContent = ({
     }
   }, [settingsOpen]);
 
-  // callbacks
+  //callbacks
   const handleSheetChanges = useCallback((index: number) => {
-    console.log("handleSheetChanges", index);
     if (index == -1) setSettingsOpen(false);
   }, []);
   return (
@@ -54,14 +40,8 @@ const NotePageContent = ({
           </Text>
         </Pressable>
         <View className="flex flex-row gap-2">
-          <Pressable className="p-2" onPress={() => setIsMarkdown(!isMarkdown)}>
-            <Text className="text-text">
-              {isMarkdown ? (
-                <FontAwesome5 name="markdown" size={24} />
-              ) : (
-                <Entypo name="text" size={24} />
-              )}
-            </Text>
+          <Pressable className="p-2">
+            <Text className="text-text"></Text>
           </Pressable>
           <Pressable
             className="p-2"
@@ -74,9 +54,7 @@ const NotePageContent = ({
         </View>
       </View>
       <ScrollView className="flex grow h-full">
-        <NoteInput
-          {...{ content, setContent, title, setTitle, handleSave, isMarkdown }}
-        />
+        <NoteInput uuid={uuid} />
       </ScrollView>
       <BottomSheet
         ref={bottomSheetRef}
@@ -84,19 +62,19 @@ const NotePageContent = ({
         index={-1}
         enablePanDownToClose
         handleStyle={{
-          backgroundColor: "#121517",
+          backgroundColor: '#121517',
           borderTopWidth: 2,
-          borderTopColor: "#313749",
+          borderTopColor: '#313749',
         }}
-        handleIndicatorStyle={{ backgroundColor: "#313749" }}
-        backgroundStyle={{ backgroundColor: "#121517" }}
+        handleIndicatorStyle={{ backgroundColor: '#313749' }}
+        backgroundStyle={{ backgroundColor: '#121517' }}
       >
         <BottomSheetView>
           <View className="flex flex-col p-8 pb-10 gap-4">
             <View className="flex flex-row gap-2">
               <Pressable
-                onPress={handleDelete}
                 className="bg-red-500 p-2 rounded-xl flex-1"
+                onPress={() => deleteNote(uuid)}
               >
                 <Text className="text-text text-center">Delete Note </Text>
               </Pressable>
@@ -107,11 +85,11 @@ const NotePageContent = ({
                 <Text className="text-background text-center">New Note</Text>
               </Pressable>
             </View>
-            <TagsInput tags={tags} setTags={setTags} inBottomSheet />
-            <DueDateInput date={dueDate} setDate={setDueDate} />
           </View>
         </BottomSheetView>
       </BottomSheet>
     </View>
   );
 };
+
+export default Note;

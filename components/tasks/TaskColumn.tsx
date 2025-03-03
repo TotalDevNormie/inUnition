@@ -1,15 +1,15 @@
-import { useEffect } from "react";
-import { Text, View } from "react-native";
-import "react-native-get-random-values";
-import { Task } from "../../utils/manageTasks";
+import { useCallback, useEffect } from 'react';
+import { Text, View } from 'react-native';
+import 'react-native-get-random-values';
+import { Task, useTaskStore } from '../../utils/manageTasks';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
   runOnJS,
   useAnimatedRef,
   AnimatedRef,
-} from "react-native-reanimated";
-import DraggableTask from "./DraggableTask";
+} from 'react-native-reanimated';
+import DraggableTask from './DraggableTask';
 
 export type ColumnRefs = {
   [key: string]: AnimatedRef<Animated.View>;
@@ -27,10 +27,10 @@ type TaskColumnProps = {
 export default function TaskColumn({
   status,
   tasks,
-  onDragEnd,
   updateColumnRef,
   columnRefs,
   editTask,
+  onDragEnd,
 }: TaskColumnProps) {
   const columnRef = useAnimatedRef<Animated.View>();
   const isDragging = useSharedValue(false);
@@ -41,7 +41,6 @@ export default function TaskColumn({
 
   const onDragUpdate = () => {
     isDragging.value = true;
-    console.log("works", isDragging.value);
   };
 
   const onColumnDragEnd = (task: Task, status: string) => {

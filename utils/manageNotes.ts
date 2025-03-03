@@ -1,319 +1,346 @@
-import { Platform } from "react-native";
-import * as FileSystem from "expo-file-system";
-import { cleanupTags, getTagsFormUUID, saveTags } from "./manageTags";
-import { useAuth } from "../components/auth/AuthContext";
-import sendRequest from "./sendrequest";
-import NetInfo from "@react-native-community/netinfo";
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { queryClient } from "../app/_layout";
-import { tr } from "react-native-paper-dates";
-const NOTES = "notes";
+import { create } from 'zustand';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { MMKV } from 'react-native-mmkv';
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  collection,
+  getDocs,
+  onSnapshot,
+  query,
+  where,
+} from 'firebase/firestore';
+import NetInfo from '@react-native-community/netinfo';
+import { app } from '../firebaseConfig';
+import debounce from './debounce';
+import { useAuthStore } from './useAuthStore';
+
 export type Note = {
-	title: string;
-	content: string;
-	ends_at: string;
-	created_at: string;
-	updated_at: string;
+  uuid: string;
+  title?: string;
+  titleUpdatedAt?: string;
+  content?: string;
+  contentUpdatedAt?: string;
+  tags?: string[];
+  endsAt?: string;
+  createdAt?: string;
+  updatedAt: string;
+  state: 'active' | 'deleted';
 };
 
-export type NoteWithUUID = Note & {
-	uuid: string;
+const storage = new MMKV();
+
+const db = getFirestore(app);
+
+interface NoteState {
+  notes: { [key: string]: Note };
+  pendingChanges: {
+    [key: string]: { timestamp: number };
+  };
+  lastSyncTimestamp: number;
+  activeNotesArray: () => Note[];
+  saveNote: (note: Note) => Promise<void>;
+  deleteNote: (uuid: string) => Promise<void>;
+  syncWithFirebase: () => Promise<void>;
+}
+
+const zustandStorage = {
+  getItem: (name: string) => {
+    const value = storage.getString(name);
+    return value ? JSON.parse(value) : null;
+  },
+  setItem: (name: string, value: any) => {
+    storage.set(name, JSON.stringify(value));
+  },
+  removeItem: (name: string) => {
+    storage.delete(name);
+  },
 };
 
-export type FullNote = Note & {
-	tags: string[];
-};
-type NoteObject = {
-	[key: string]: Note;
-};
+export const useNoteStore = create<NoteState>()(
+  persist(
+    (set, get) => ({
+      notes: {},
+      pendingChanges: {},
+      lastSyncTimestamp: Date.now(),
+      activeNotesArray: () =>
+        Object.values(get().notes).filter(({ state }) => state === 'active'),
 
-export const getAllNotes = async (
-	getFromBuffer: boolean = false,
-	skipDBSync = false
-) => {
-	let notes: null | NoteObject = null;
-	if (Platform.OS === "web" || getFromBuffer) {
-		const notesStirng = await AsyncStorage.getItem(
-			`${NOTES}${getFromBuffer ? "-buffer" : ""}`
-		);
-		notes = notesStirng ? (JSON.parse(notesStirng) as NoteObject) : null;
-	} else {
-		const fileUri = `${FileSystem.documentDirectory}${NOTES}.json`;
-		const fileExists = await FileSystem.getInfoAsync(fileUri);
-		if (!fileExists.exists) {
-			return null;
-		}
-		const file = await FileSystem.readAsStringAsync(fileUri);
-		notes = file ? (JSON.parse(file) as NoteObject) : null;
-	}
-	if (!getFromBuffer && !skipDBSync) {
-		getNotesFromDB();
-	}
+      saveNote: async (note: Partial<Note>) => {
+        if (!note.uuid || note.uuid == undefined)
+          throw new Error('Note uuid is required');
+        const timestamp = Date.now();
+        const currentNotes = get().notes;
+        const pendingChanges = get().pendingChanges;
 
-	return notes;
-};
+        const title = note?.title
+          ? note.title?.slice(0, 100)
+          : currentNotes[note.uuid]?.title || '';
 
-export const compareTimestamps = (
-	firstTimestamp: string,
-	secondTimestamp: string
-) => {
-	const firstDate = new Date(firstTimestamp);
+        const content = note?.content
+          ? note.content?.slice(0, 10000)
+          : currentNotes[note.uuid]?.content || '';
 
-	const secondDate = new Date(secondTimestamp);
+        const updatedNote: Note = {
+          ...currentNotes[note.uuid],
+          ...note,
+          title,
+          titleUpdatedAt: note?.title
+            ? new Date().toISOString()
+            : currentNotes[note.uuid]?.titleUpdatedAt ||
+              new Date().toISOString(),
+          content,
+          contentUpdatedAt: note?.content
+            ? new Date().toISOString()
+            : currentNotes[note.uuid]?.contentUpdatedAt ||
+              new Date().toISOString(),
+          state: 'active',
+          createdAt:
+            currentNotes[note.uuid]?.createdAt || new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
 
-	if (firstDate.getTime() === secondDate.getTime()) {
-		return 0;
-	} else if (firstDate.getTime() > secondDate.getTime()) {
-		return 1;
-	} else {
-		return -1;
-	}
-};
+        set({
+          notes: {
+            ...currentNotes,
+            [note.uuid]: updatedNote,
+          },
+          pendingChanges: {
+            ...pendingChanges,
+            [note.uuid]: { timestamp },
+          },
+        });
 
-export const getNotesFromDB = async (shouldGetAllNotes: boolean = false) => {
-	const state = await NetInfo.fetch();
-	const user = await AsyncStorage.getItem("user");
-	if (!state.isConnected || !user) return;
-	const lastSync = await AsyncStorage.getItem("lastNoteSync");
-	let options: RequestInit = { method: "POST" };
-	if (lastSync && !shouldGetAllNotes) {
-		options.body = JSON.stringify({
-			timestamp: lastSync,
-		});
-	}
-	try {
-		const { notes, deleted } = await sendRequest<{
-			notes: NoteWithUUID[];
-			deleted: { uuid: string }[];
-		}>("/notes", options, true);
+        const netInfo = await NetInfo.fetch();
+        const authenticated = useAuthStore.getState().isAuthenticated;
 
-		if (notes.length === 0 && deleted.length === 0) return;
+        if (netInfo.isConnected && authenticated) {
+          debounce(async () => {
+            try {
+              const user = useAuthStore.getState().user;
+              if (!user || !user.uid) throw new Error('User not authenticated');
 
-		await Promise.all(deleted.map((entry) => deleteNote(entry.uuid, true)));
+              await setDoc(doc(db, 'notes', note.uuid), {
+                ...updatedNote,
+                userUid: user.uid,
+              });
+              const { [note.uuid]: _, ...remainingChanges } =
+                get().pendingChanges;
+              set({ pendingChanges: remainingChanges });
+            } catch (error) {
+              console.error('Failed to sync with Firebase:', error);
+            }
+          }, 500);
+        }
+      },
 
-		const allNotes = await getAllNotes(false, true);
-		const deletedNoteEntries = JSON.parse(
-			(await AsyncStorage.getItem("deletedNoteEntries")) || "[]"
-		);
+      deleteNote: async (uuid: string) => {
+        const timestamp = Date.now();
+        const currentNotes = get().notes;
+        const pendingChanges = get().pendingChanges;
 
-		const filteredNotes = notes.filter((entry) => {
-			if (deletedNoteEntries.includes(entry.uuid)) return false;
-			const note = allNotes?.[entry.uuid];
-			if (!note || !allNotes) return true;
-			return compareTimestamps(note.updated_at, entry.updated_at);
-		});
+        if (!currentNotes[uuid]) return;
+        // Soft delete by updating the state
+        const softDeletedNote: Note = {
+          uuid,
+          state: 'deleted',
+          updatedAt: new Date().toISOString(),
+        };
 
-		for (const newNote of filteredNotes)
-			await saveNote({ ...newNote }, [], newNote.uuid, false, true);
+        set({
+          notes: {
+            ...currentNotes,
+            [uuid]: softDeletedNote,
+          },
+          pendingChanges: {
+            ...pendingChanges,
+            [uuid]: { timestamp },
+          },
+        });
 
-		await AsyncStorage.setItem("lastNoteSync", new Date().toISOString());
-		queryClient.invalidateQueries({ queryKey: ["notes"] });
-	} catch (error) {}
-};
+        // Try to sync with Firebase if online
+        const netInfo = await NetInfo.fetch();
+        const authenticated = useAuthStore.getState().isAuthenticated;
+        if (netInfo.isConnected && authenticated) {
+          try {
+            const user = useAuthStore.getState().user;
+            if (!user || !user.uid) throw new Error('User not authenticated');
+            await setDoc(doc(db, 'notes', uuid), {
+              ...softDeletedNote,
+              userUid: user.uid,
+            });
+            // Remove from pending changes if sync successful
+            const { [uuid]: _, ...remainingChanges } = get().pendingChanges;
+            set({ pendingChanges: remainingChanges });
+          } catch (error) {
+            console.error('Failed to sync deletion with Firebase:', error);
+          }
+        }
+      },
+      syncWithFirebase: async () => {
+        const authenticated = useAuthStore.getState().isAuthenticated;
+        const user = useAuthStore.getState().user;
+        const netInfo = await NetInfo.fetch();
+        if (!netInfo.isConnected || !authenticated || !user || !user.uid)
+          return;
 
-export const getNote = async (
-	noteUUID: string,
-	getFromBuffer: boolean = false
-): Promise<FullNote | null> => {
-	const notes = await getAllNotes(getFromBuffer, true);
-	if (!notes || !notes[noteUUID]) return null;
-	console.log(notes[noteUUID]);
+        const state = get();
+        const { notes, pendingChanges } = state;
 
-	return {
-		...notes[noteUUID],
-		tags: await getTagsFormUUID(noteUUID),
-	} as FullNote;
-};
-export const saveNote = async (
-	note: Pick<Note, "title" | "content" | "ends_at">,
-	tags: string[],
-	noteUUID: string,
-	saveToBuffer: boolean = false,
-	withoutDatabase: boolean = false
-) => {
-	if (!noteUUID) {
-		throw new Error("Note UUID is required");
-	}
-	let oldNote: null | Note = null;
-	try {
-		oldNote = await getNote(noteUUID);
-	} catch (error) {
-		console.log("Error fetching old note:", error);
-	}
-	let newNote = {
-		title: note.title.slice(0, 100),
-		content: note.content,
-		ends_at: note.ends_at,
-		created_at: oldNote ? oldNote.created_at : new Date().toISOString(),
-		updated_at:
-			withoutDatabase && oldNote?.updated_at
-				? oldNote.updated_at
-				: new Date().toISOString(),
-	} as Note;
-	const notes = await getAllNotes(saveToBuffer, true);
-	const newNotes = notes
-		? { ...notes, [noteUUID]: newNote }
-		: { [noteUUID]: newNote };
-	if (!saveToBuffer && !withoutDatabase) {
-		await saveTags(tags, noteUUID, "note");
-	}
-	if (Platform.OS === "web" || saveToBuffer) {
-		await AsyncStorage.setItem(
-			`notes${saveToBuffer ? "-buffer" : ""}`,
-			JSON.stringify(newNotes)
-		);
-	} else {
-		const fileUri = `${FileSystem.documentDirectory}${NOTES}.json`;
-		await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(newNotes));
-	}
+        try {
+          // 1. Fetch notes from Firebase
+          const notesQuery = query(
+            collection(db, 'notes'),
+            where('userUid', '==', user.uid),
+          );
+          const querySnapshot = await getDocs(notesQuery);
+          const firebaseNotes: { [key: string]: Note } = {};
 
-	const state = await NetInfo.fetch();
-	const user = await AsyncStorage.getItem("user");
-	console.log({ ...newNote, uuid: noteUUID });
+          querySnapshot.forEach((doc) => {
+            firebaseNotes[doc.id] = { ...doc.data() } as Note;
+          });
 
-	if (state.isConnected && user && !withoutDatabase && !saveToBuffer) {
-		try {
-			await sendRequest(
-				"/notes/save",
-				{
-					body: JSON.stringify({ ...newNote, uuid: noteUUID }),
-					method: "POST",
-				},
-				true
-			);
-		} catch (error) {
-			console.error("Error sending request:", error);
-			if (!saveToBuffer) {
-				await saveNote(newNote, [], noteUUID, true);
-			}
-		}
-	} else if (!saveToBuffer && !withoutDatabase) {
-		await saveNote(newNote, [], noteUUID, true);
-	}
-	return note;
-};
-export const deleteNote = async (noteUUID: string, withoutDatabase = false) => {
-	const notes = await getAllNotes(false, true);
-	const newNotes = notes ? { ...notes } : {};
-	delete newNotes[noteUUID];
-	cleanupTags(noteUUID);
+          const mergedNotes = { ...notes };
 
-	const oldDeletedEntries = await AsyncStorage.getItem("deletedNoteEntries");
-	if (oldDeletedEntries) {
-		const deleted = JSON.parse(oldDeletedEntries);
-		deleted.push(noteUUID);
-		await AsyncStorage.setItem(
-			"deletedNoteEntries",
-			JSON.stringify(deleted)
-		);
-	} else {
-		await AsyncStorage.setItem(
-			"deletedNoteEntries",
-			JSON.stringify([noteUUID])
-		);
-	}
+          // 2. Merge Firebase notes into local notes
+          for (const [uuid, firebaseNote] of Object.entries(firebaseNotes)) {
+            const localNote = notes[uuid];
 
-	if (Platform.OS === "web") {
-		await AsyncStorage.setItem(NOTES, JSON.stringify(newNotes));
-	} else {
-		const fileUri = `${FileSystem.documentDirectory}${NOTES}.json`;
-		await FileSystem.writeAsStringAsync(fileUri, JSON.stringify(newNotes));
-	}
-	const state = await NetInfo.fetch();
-	const user = await AsyncStorage.getItem("user");
-	if (state.isConnected && user && !withoutDatabase) {
-		sendRequest(
-			"/notes/delete",
-			{
-				body: JSON.stringify({ uuid: noteUUID }),
-				method: "POST",
-			},
-			true
-		);
-	} else if (!withoutDatabase) {
-		const oldDeletedEntriesBuffer = await AsyncStorage.getItem(
-			"deletedNoteEntries-buffer"
-		);
+            // If the note doesn't exist locally, add it from Firebase
+            if (!localNote) {
+              mergedNotes[uuid] = firebaseNote;
+              continue;
+            }
 
-		if (oldDeletedEntriesBuffer) {
-			const deleted = JSON.parse(oldDeletedEntriesBuffer);
-			deleted.push(noteUUID);
-			await AsyncStorage.setItem(
-				"deletedNoteEntries-buffer",
-				JSON.stringify(deleted)
-			);
-		} else {
-			await AsyncStorage.setItem(
-				"deletedNoteEntries-buffer",
-				JSON.stringify([noteUUID])
-			);
-		}
-	}
-	return null;
-};
+            // Handle pending changes
+            const pendingChange = pendingChanges[uuid];
+            if (pendingChange) {
+              // If there's a pending delete, respect the local deletion
+              if (localNote.state === 'deleted') {
+                mergedNotes[uuid] = localNote;
+                continue;
+              }
+            }
 
-export const sendFromBuffer = async () => {
-	const oldDeletedEntriesBuffer = await AsyncStorage.getItem(
-		"deletedNoteEntries-buffer"
-	);
-	const notesBuffer = await getAllNotes(true);
-	if (!notesBuffer && !oldDeletedEntriesBuffer) return;
-	const user = await AsyncStorage.getItem("user");
-	const state = await NetInfo.fetch();
-	if (state.isConnected && user) {
-		if (oldDeletedEntriesBuffer) {
-			const deleted = JSON.parse(oldDeletedEntriesBuffer);
-			for (const noteUUID of deleted) {
-				try {
-					await sendRequest(
-						"/notes/delete",
-						{
-							body: JSON.stringify({ uuid: noteUUID }),
-							method: "POST",
-						},
-						true
-					);
-				} catch (error) {
-					console.error("Error sending request:", error);
-				}
-			}
-			await AsyncStorage.removeItem("deletedNoteEntries-buffer");
-		}
-		if (!notesBuffer) return;
-		for (const noteUUID in notesBuffer) {
-			try {
-				console.log("culprit");
-				await sendRequest(
-					"/notes/save",
-					{
-						body: JSON.stringify({
-							...notesBuffer[noteUUID],
-							uuid: noteUUID,
-						}),
-						method: "POST",
-					},
-					true
-				);
-			} catch (error) {
-				console.error("Error sending request:", error);
-			}
-		}
-		console.log("Notes sent from buffer");
-		await AsyncStorage.removeItem(NOTES + "-buffer");
-	}
+            // Field-level conflict resolution
+            const mergedNote = { ...localNote }; // Start with local note
+
+            // Compare timestamps and merge fields
+            if (firebaseNote.titleUpdatedAt && localNote.titleUpdatedAt) {
+              const localTitleTime = new Date(
+                localNote.titleUpdatedAt,
+              ).getTime();
+              const remoteTitleTime = new Date(
+                firebaseNote.titleUpdatedAt,
+              ).getTime();
+              if (remoteTitleTime > localTitleTime) {
+                mergedNote.title = firebaseNote.title;
+                mergedNote.titleUpdatedAt = firebaseNote.titleUpdatedAt;
+              }
+            } else if (firebaseNote.titleUpdatedAt) {
+              mergedNote.title = firebaseNote.title;
+              mergedNote.titleUpdatedAt = firebaseNote.titleUpdatedAt;
+            }
+
+            if (firebaseNote.contentUpdatedAt && localNote.contentUpdatedAt) {
+              const localContentTime = new Date(
+                localNote.contentUpdatedAt,
+              ).getTime();
+              const remoteContentTime = new Date(
+                firebaseNote.contentUpdatedAt,
+              ).getTime();
+              if (remoteContentTime > localContentTime) {
+                mergedNote.content = firebaseNote.content;
+                mergedNote.contentUpdatedAt = firebaseNote.contentUpdatedAt;
+              }
+            } else if (firebaseNote.contentUpdatedAt) {
+              mergedNote.content = firebaseNote.content;
+              mergedNote.contentUpdatedAt = firebaseNote.contentUpdatedAt;
+            }
+
+            // Handle state (soft delete) - local takes precedence
+            if (localNote.state === 'deleted') {
+              mergedNote.state = 'deleted';
+            } else if (firebaseNote.state === 'deleted') {
+              mergedNote.state = 'deleted';
+            } else {
+              mergedNote.state = 'active';
+            }
+
+            mergedNote.updatedAt = new Date().toISOString();
+            mergedNotes[uuid] = mergedNote;
+          }
+
+          // 3. Process local notes that are not in Firebase or have pending changes
+          for (const [uuid, localNote] of Object.entries(notes)) {
+            const firebaseNote = firebaseNotes[uuid];
+            const pendingChange = pendingChanges[uuid];
+
+            // If the note doesn't exist in Firebase or has pending changes, update Firebase
+            if (!firebaseNote || pendingChange) {
+              // If it's a new note or has pending changes, push to Firebase
+              try {
+                await setDoc(doc(db, 'notes', uuid), {
+                  ...localNote,
+                  userUid: user.uid,
+                });
+              } catch (error) {
+                console.error('Failed to sync note to Firebase:', error);
+              }
+              continue;
+            }
+          }
+
+          // 4. Update local state
+          set({
+            notes: mergedNotes,
+            pendingChanges: {},
+            lastSyncTimestamp: Date.now(),
+          });
+        } catch (error) {
+          console.error('Failed to sync with Firebase:', error);
+        }
+      },
+    }),
+    {
+      name: 'note-storage',
+      storage: createJSONStorage(() => zustandStorage),
+    },
+  ),
+);
+
+// Set up real-time sync listener only when needed
+let unsubscribe: (() => void) | null = null;
+
+// Setup listener function
+const setupFirebaseListener = (userId: string | null) => {
+  // Clean up any existing listener
+  if (unsubscribe) {
+    unsubscribe();
+    unsubscribe = null;
+  }
+
+  // Only setup listener if there's a logged-in user
+  if (userId) {
+    const notesQuery = query(
+      collection(db, 'notes'),
+      where('userId', '==', userId),
+    );
+
+    unsubscribe = onSnapshot(notesQuery, () => {
+      const store = useNoteStore.getState();
+      if (store.lastSyncTimestamp < Date.now() - 1000) {
+        // Prevent sync loops
+        store.syncWithFirebase();
+      }
+    });
+  }
 };
 
-export const deleteAllLocalNotes = () => {
-	AsyncStorage.removeItem("deletedNoteEntries");
-	AsyncStorage.removeItem("deletedNoteEntries-buffer");
-	AsyncStorage.removeItem("lastNoteSync");
-	AsyncStorage.removeItem(NOTES + "-buffer");
-	if (Platform.OS === "web") {
-		AsyncStorage.removeItem(NOTES);
-	} else {
-		const fileUri = `${FileSystem.documentDirectory}${NOTES}.json`;
-		const buferFileUri = `${FileSystem.documentDirectory}${NOTES}-buffer.json`;
-		FileSystem.deleteAsync(fileUri);
-		FileSystem.deleteAsync(buferFileUri);
-	}
-};
+// Setup network state listener
+NetInfo.addEventListener((state) => {
+  if (state.isConnected) {
+    useNoteStore.getState().syncWithFirebase();
+  }
+});

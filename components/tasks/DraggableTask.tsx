@@ -1,5 +1,5 @@
-import { Pressable, Text, useWindowDimensions, View } from "react-native";
-import "react-native-get-random-values";
+import { Pressable, Text, useWindowDimensions, View } from 'react-native';
+import 'react-native-get-random-values';
 
 import Animated, {
   useAnimatedStyle,
@@ -9,11 +9,11 @@ import Animated, {
   useAnimatedRef,
   measure,
   withTiming,
-} from "react-native-reanimated";
-import { Gesture, GestureDetector } from "react-native-gesture-handler";
-import { Task } from "../../utils/manageTasks";
-import { ColumnRefs } from "./TaskColumn";
-import { MaterialIcons } from "@expo/vector-icons";
+} from 'react-native-reanimated';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Task } from '../../utils/manageTasks';
+import { ColumnRefs } from './TaskColumn';
+import { MaterialIcons } from '@expo/vector-icons';
 
 type DraggableTaskProps = {
   task: Task;
@@ -37,6 +37,8 @@ export default function DraggableTask({
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const isLandscape = screenWidth > screenHeight;
 
+  console.log(task.uuid);
+
   const gesture = Gesture.Pan()
     .onStart(() => {
       isDragging.value = true;
@@ -51,8 +53,6 @@ export default function DraggableTask({
       const taskMeasurements = measure(taskRef);
       if (!taskMeasurements) return;
 
-      console.log(columnRefs);
-
       if (!isLandscape) {
         const stateArray = Object.keys(columnRefs);
         const stateIndex = stateArray.findIndex((key) => key === task.status);
@@ -60,12 +60,14 @@ export default function DraggableTask({
         if (translateX.value < -taskMeasurements.width / 3) {
           runOnJS(onDragEnd)(
             task,
-            stateArray[(stateIndex - 1 + stateArray.length) % stateArray.length]
+            stateArray[
+              (stateIndex - 1 + stateArray.length) % stateArray.length
+            ],
           );
         } else if (translateX.value > taskMeasurements.width / 3) {
           runOnJS(onDragEnd)(
             task,
-            stateArray[(stateIndex + 1) % stateArray.length]
+            stateArray[(stateIndex + 1) % stateArray.length],
           );
         }
         translateX.value = withSpring(0);

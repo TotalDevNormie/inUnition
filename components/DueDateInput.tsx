@@ -1,13 +1,13 @@
-import { AntDesign } from "@expo/vector-icons";
-import moment from "moment";
-import { useCallback, useEffect, useState } from "react";
-import { View, Text, Pressable } from "react-native";
-import { Button } from "react-native-paper";
+import { AntDesign } from '@expo/vector-icons';
+import moment from 'moment';
+import { useCallback, useEffect, useState } from 'react';
+import { View, Text, Pressable } from 'react-native';
+import { Button } from 'react-native-paper';
 import {
   DatePickerInput,
   DatePickerModal,
   TimePickerModal,
-} from "react-native-paper-dates";
+} from 'react-native-paper-dates';
 
 export default function DueDateInput({ date, setDate }) {
   const [visible, setVisible] = useState(false);
@@ -16,7 +16,6 @@ export default function DueDateInput({ date, setDate }) {
   const [inputMinutes, setInputMinutes] = useState<number | undefined>();
 
   useEffect(() => {
-    console.log(date);
     if (!date) {
       setInputHours(undefined);
       setInputMinutes(undefined);
@@ -34,7 +33,6 @@ export default function DueDateInput({ date, setDate }) {
     ({ hours, minutes }) => {
       setInputHours(hours);
       setInputMinutes(minutes);
-      console.log("date ", date);
       setDate(moment(date).hours(hours).minutes(minutes).toISOString());
       setVisible(false);
     },
@@ -43,7 +41,6 @@ export default function DueDateInput({ date, setDate }) {
 
   const onDateConfirm = useCallback(
     (params: { date: Date }) => {
-      console.log("date ", params.date, " params ", params);
       setInputHours(0);
       setInputMinutes(0);
       setDate(moment(params.date).hours(0).minutes(0).toISOString());
@@ -59,7 +56,7 @@ export default function DueDateInput({ date, setDate }) {
         <View className="flex flex-row justify-between p-4 bg-secondary-850 rounded-xl">
           {date ? (
             <Text className="text-text grow">
-              {moment(date).format("DD.MM.YYYY")}
+              {moment(date).format('DD.MM.YYYY')}
             </Text>
           ) : (
             <Text className="text-text grow">Press to select date </Text>
@@ -73,13 +70,13 @@ export default function DueDateInput({ date, setDate }) {
       <Text className="text-text">Due time</Text>
       <Pressable onPress={() => setVisible(true)}>
         <View className="flex flex-row justify-between p-4 bg-secondary-850 rounded-xl">
-          {typeof inputHours !== "undefined" ||
-          typeof inputMinutes !== "undefined" ? (
+          {typeof inputHours !== 'undefined' ||
+          typeof inputMinutes !== 'undefined' ? (
             <Text className="text-text grow">
-              {String(inputHours)?.length === 1 ? "0" + inputHours : inputHours}
+              {String(inputHours)?.length === 1 ? '0' + inputHours : inputHours}
               :
               {String(inputMinutes)?.length === 1
-                ? "0" + inputMinutes
+                ? '0' + inputMinutes
                 : inputMinutes}
             </Text>
           ) : (
@@ -91,7 +88,7 @@ export default function DueDateInput({ date, setDate }) {
         </View>
       </Pressable>
       <Pressable
-        onPress={() => setDate("")}
+        onPress={() => setDate('')}
         className="bg-accent p-2 rounded-xl"
       >
         <Text className="text-center text-background">Clear due date</Text>
@@ -108,7 +105,7 @@ export default function DueDateInput({ date, setDate }) {
         mode="single"
         date={date ? new Date(date) : undefined}
         validRange={{
-          startDate: new Date(moment().subtract(1, "days").format()),
+          startDate: new Date(moment().subtract(1, 'days').format()),
         }}
         onDismiss={() => setVisibleDate(false)}
         onConfirm={onDateConfirm}
