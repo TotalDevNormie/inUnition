@@ -6,6 +6,7 @@ import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DarkLogo from '../../assets/darkLogo.svg';
 import { useAuth } from '../../components/auth/AuthContext';
+import SearchButton from '../../components/SearchButton';
 
 export default function TabsLayout() {
   return (
@@ -26,32 +27,30 @@ export default function TabsLayout() {
 }
 
 const Bar = () => {
-  const { navigation, state, descriptors, router } = Navigator.useContext();
-
   const pathname = usePathname();
 
   return (
-    <View className="flex flex-row align-middle p-2 mx-8 rounded-xl justify-evenly bg-secondary-850">
+    <View className="flex flex-row align-middle p-2 mx-4 rounded-xl justify-evenly bg-secondary-850">
       <NavLink
         href="/"
-        className={`flex flex-col justify-center rounded-xl ${
-          pathname === '/' && 'bg-secondary '
-        }`}
+        className={`flex flex-col justify-center bg-secondary rounded-xl`}
         icon={<Ionicons name="home" size={32} />}
+        active={pathname === '/'}
+        mobile
       ></NavLink>
       <NavLink
         href="/notes"
-        className={`flex flex-col justify-center rounded-xl ${
-          pathname === '/notes' && 'bg-secondary '
-        }`}
+        className={`flex flex-col justify-center rounded-xl`}
         icon={<Ionicons name="document-text" size={32} />}
+        active={pathname === '/notes'}
+        mobile
       ></NavLink>
       <NavLink
         href="/tasks"
-        className={`flex flex-col justify-center rounded-xl ${
-          pathname === '/tasks' && 'bg-secondary '
-        }`}
+        className={`flex flex-col justify-center rounded-xl`}
         icon={<MaterialIcons name="task-alt" size={32} />}
+        active={pathname === '/tasks'}
+        mobile
       ></NavLink>
     </View>
   );
@@ -59,10 +58,11 @@ const Bar = () => {
 
 const Header = () => {
   return (
-    <View className="flex flex-row px-8 py-4 rounded-xl">
+    <View className="flex flex-row justify-between px-4 rounded-xl">
       <View>
         <DarkLogo />
       </View>
+      <SearchButton />
     </View>
   );
 };

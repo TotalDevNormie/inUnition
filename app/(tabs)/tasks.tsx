@@ -38,7 +38,7 @@ export default function tasks() {
         />
       </View>
       <View className="bottom-0 right-0 absolute">
-        <Pressable onPress={() => router.push('/taskgroup/new')}>
+        <Pressable onPress={() => router.push('/taskboard/new')}>
           <View className="text-background pl-5 pt-4 pb-5 pr-5  rounded-xl bg-primary">
             <MaterialIcons name="add-task" size={24} />
           </View>
@@ -51,7 +51,7 @@ export default function tasks() {
 const TaskGroupCard = ({ taskGroup }: { taskGroup: TaskGroupWithUUID }) => {
   return (
     <Pressable
-      onPress={() => router.push(`/taskgroup/${taskGroup.uuid}`)}
+      onPress={() => router.push(`/taskboard/${taskGroup.uuid}`)}
       key={taskGroup.uuid}
     >
       <View

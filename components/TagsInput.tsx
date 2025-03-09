@@ -1,10 +1,10 @@
-import { Entypo, Ionicons } from "@expo/vector-icons";
+import { Entypo, Ionicons } from '@expo/vector-icons';
 import {
   BottomSheetFlatList,
   BottomSheetTextInput,
-} from "@gorhom/bottom-sheet";
-import { useState } from "react";
-import { FlatList, Pressable, Text, TextInput, View } from "react-native";
+} from '@gorhom/bottom-sheet';
+import { useState } from 'react';
+import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
 
 type TagsInputProps = {
   tags: string[];
@@ -17,17 +17,16 @@ export const TagsInput = ({
   setTags,
   inBottomSheet = false,
 }: TagsInputProps) => {
-  const [newTag, setNewTag] = useState("");
+  const [newTag, setNewTag] = useState('');
 
   const handleAddTag = () => {
     if (newTag) {
       setTags([...new Set([...tags, newTag])]);
-      setNewTag("");
+      setNewTag('');
     }
   };
 
   const CorrectInput = inBottomSheet ? BottomSheetTextInput : TextInput;
-  const CorrectList = inBottomSheet ? BottomSheetFlatList : FlatList;
 
   const handleRemoveTag = (tag: string) => {
     setTags(tags.filter((t) => t !== tag));
@@ -50,7 +49,7 @@ export const TagsInput = ({
           <Entypo name="plus" size={18} className="text-background" />
         </Pressable>
       </View>
-      <CorrectList
+      <FlatList
         data={tags}
         renderItem={({ item: tag }) => (
           <View className="bg-secondary-850 flex flex-row gap-1 py-2 px-4 rounded-xl items-center mr-2">

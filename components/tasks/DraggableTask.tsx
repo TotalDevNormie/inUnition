@@ -14,6 +14,7 @@ import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Task } from '../../utils/manageTasks';
 import { ColumnRefs } from './TaskColumn';
 import { MaterialIcons } from '@expo/vector-icons';
+import moment from 'moment';
 
 type DraggableTaskProps = {
   task: Task;
@@ -36,8 +37,6 @@ export default function DraggableTask({
   const isDragging = useSharedValue(false);
   const { width: screenWidth, height: screenHeight } = useWindowDimensions();
   const isLandscape = screenWidth > screenHeight;
-
-  console.log(task.uuid);
 
   const gesture = Gesture.Pan()
     .onStart(() => {
@@ -117,6 +116,15 @@ export default function DraggableTask({
           <Text className="text-text text-lg">{task.name}</Text>
           {task?.description && (
             <Text className="text-text/50">{task?.description}</Text>
+          )}
+          {task?.endsAt && (
+            <Text className="text-primary">
+              Due {moment(task?.endsAt).fromNow()}
+            </Text>
+          )}
+
+          {task?.endsAt && (
+            <Text className="text-secondary">{task?.tags?.join(', ')}</Text>
           )}
         </View>
         <Pressable onPress={() => editTask(task)}>

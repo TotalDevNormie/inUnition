@@ -1,33 +1,46 @@
-import { Link, Navigator, Slot } from 'expo-router';
+import { Link, Navigator, Slot, usePathname } from 'expo-router';
 import { Pressable, useColorScheme, View } from 'react-native';
 import DarkLogoFull from '../assets/darkLogoFull.svg';
-import { TabRouter } from '@react-navigation/native';
+import { TabRouter, useRoute } from '@react-navigation/native';
 import NavLink from './NavLink';
 import { Feather, Ionicons, MaterialIcons, Octicons } from '@expo/vector-icons';
 import { useState } from 'react';
 import { useAuth } from './auth/AuthContext';
+import { ScrollView } from 'react-native-gesture-handler';
+import { useRouteContext } from './RouteContext';
+import WebSearchPopup from '../components/WebSearchPopup';
+import SearchButton from '../components/SearchButton';
 
 export default function WebTabLayout() {
   return (
     <Navigator router={TabRouter}>
-      <View className="flex p-4 bg-background flex-row gap-4 color-current h-full">
-        <Header />
-        <View className="flex-1 rounded-lg p-4 grow specific-issue">
+      <ScrollView
+        className="flex p-4 bg-background  color-current min-h-full w-full"
+        contentContainerStyle={{
+          flexGrow: 1,
+          flexDirection: 'row',
+          gap: 16,
+        }}
+      >
+        <View className="w-full lg:w-fit">
+          <Sidebar />
+        </View>
+        <View className="rounded-lg p-4 grow specific-issue">
           <Slot />
         </View>
-      </View>
+      </ScrollView>
     </Navigator>
   );
 }
-
-const Header = () => {
+const Sidebar = () => {
   const theme = useColorScheme();
   const { user, isLoadingUser } = useAuth();
 
   const [collapsed, setCollapsed] = useState(false);
+  const pathname = usePathname();
 
   return (
-    <View className="flex align-middle justify-between p-4 rounded-xl bg-secondary-850 duration-300">
+    <View className="flex align-middle justify-between p-4 rounded-xl bg-secondary-850 duration-300 sticky top-0 min-h-[calc(100svh-2rem)]">
       <View className="flex flex-col gap-2 duration-300 ">
         <View className="flex flex-row justify-around duration-300">
           <Pressable
@@ -55,6 +68,7 @@ const Header = () => {
           href="/"
           icon={<Ionicons name="home" size={24} />}
           collapsed={collapsed}
+          active={pathname === '/'}
         >
           Home
         </NavLink>
@@ -63,6 +77,7 @@ const Header = () => {
           className="duration-300"
           icon={<Ionicons name="document-text" size={24} />}
           collapsed={collapsed}
+          active={pathname === '/notes'}
         >
           Your Notes
         </NavLink>
@@ -71,29 +86,14 @@ const Header = () => {
           className="duration-300"
           icon={<Octicons name="tasklist" size={24} />}
           collapsed={collapsed}
+          active={pathname === '/tasks'}
         >
-          Task Manegment
+          Task Management
         </NavLink>
+        <SearchButton />
 
         <Hr />
       </View>
-
-      {/* <NavLink */}
-      {/*   href="/notes" */}
-      {/*   className="duration-300" */}
-      {/*   icon={<Ionicons name="document-text" size={24} />} */}
-      {/*   collapsed={collapsed} */}
-      {/* > */}
-      {/*   Your Notes */}
-      {/* </NavLink> */}
-      {/* <NavLink */}
-      {/*   href="/tasks" */}
-      {/*   className="duration-300" */}
-      {/*   icon={<Octicons name="tasklist" size={24} />} */}
-      {/*   collapsed={collapsed} */}
-      {/* > */}
-      {/*   Task Manegment */}
-      {/* </NavLink> */}
 
       <View className="flex flex-col gap-2">
         <NavLink

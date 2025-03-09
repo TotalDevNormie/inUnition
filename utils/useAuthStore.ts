@@ -1,8 +1,13 @@
 // stores/authStore.ts
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
-import auth from '@react-native-firebase/auth';
 import { MMKV } from 'react-native-mmkv';
+import { useNoteStore } from './manageNotes';
+import { useTaskStore } from './manageTasks';
+import { useTaskBoardStore } from './manageTaskBoards';
+import { app, authentication } from '../firebaseConfig';
+
+app;
 
 // Define the User type
 type User = {
@@ -11,6 +16,27 @@ type User = {
   displayName: string | null;
   photoURL: string | null;
   // Add any other user properties you need
+};
+
+const clearPreviousUserData = () => {
+  useNoteStore.setState({
+    pendingChanges: {},
+    lastSyncTimestamp: 0,
+    notes: {},
+  });
+  useNoteStore.getState().syncWithFirebase();
+  useTaskStore.setState({
+    pendingChanges: {},
+    lastSyncTimestamp: 0,
+    tasks: {},
+  });
+  useTaskStore.getState().syncWithFirebase();
+  useTaskBoardStore.setState({
+    pendingChanges: {},
+    lastSyncTimestamp: 0,
+    taskBoards: {},
+  });
+  useTaskBoardStore.getState().syncWithFirebase();
 };
 
 interface AuthState {
@@ -64,7 +90,7 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true });
         try {
           // Set up auth state observer
-          const unsubscribe = auth().onAuthStateChanged((firebaseUser) => {
+          const unsubscribe = authentication.onAuthStateChanged((firebaseUser) => {
             if (firebaseUser) {
               const user: User = {
                 uid: firebaseUser.uid,
@@ -93,7 +119,7 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const userCredential = await auth().signInWithEmailAndPassword(
+          const userCredential = await authentication.signInWithEmailAndPassword(
             email,
             password,
           );
@@ -106,6 +132,7 @@ export const useAuthStore = create<AuthState>()(
               photoURL: userCredential.user.photoURL,
             };
             set({ user, isAuthenticated: true, isLoading: false });
+            // clearPreviousUserData();
           }
         } catch (error: any) {
           set({ error: error.message, isLoading: false });
@@ -120,7 +147,7 @@ export const useAuthStore = create<AuthState>()(
       ) => {
         set({ isLoading: true, error: null });
         try {
-          const userCredential = await auth().createUserWithEmailAndPassword(
+          const userCredential = await authentication.createUserWithEmailAndPassword(
             email,
             password,
           );
@@ -138,6 +165,7 @@ export const useAuthStore = create<AuthState>()(
           };
 
           set({ user, isAuthenticated: true, isLoading: false });
+          // clearPreviousUserData();
         } catch (error: any) {
           set({ error: error.message, isLoading: false });
         }
@@ -147,8 +175,9 @@ export const useAuthStore = create<AuthState>()(
       logout: async () => {
         set({ isLoading: true, error: null });
         try {
-          await auth().signOut();
+          await authentication.signOut();
           set({ user: null, isAuthenticated: false, isLoading: false });
+          // clearPreviousUserData();
         } catch (error: any) {
           set({ error: error.message, isLoading: false });
         }
@@ -158,7 +187,7 @@ export const useAuthStore = create<AuthState>()(
       updateProfile: async (data: Partial<User>) => {
         set({ isLoading: true, error: null });
         try {
-          const currentUser = auth().currentUser;
+          const currentUser = authentication.currentUser;
 
           if (!currentUser) {
             throw new Error('User not authenticated');
@@ -189,7 +218,7 @@ export const useAuthStore = create<AuthState>()(
       deleteAccount: async () => {
         set({ isLoading: true, error: null });
         try {
-          const currentUser = auth().currentUser;
+          const currentUser = authentication.currentUser;
 
           if (!currentUser) {
             throw new Error('User not authenticated');
@@ -197,6 +226,7 @@ export const useAuthStore = create<AuthState>()(
 
           await currentUser.delete();
           set({ user: null, isAuthenticated: false, isLoading: false });
+          // clearPreviousUserData();
         } catch (error: any) {
           set({ error: error.message, isLoading: false });
         }
@@ -206,7 +236,7 @@ export const useAuthStore = create<AuthState>()(
       resetPassword: async (email: string) => {
         set({ isLoading: true, error: null });
         try {
-          await auth().sendPasswordResetEmail(email);
+          await authentication.sendPasswordResetEmail(email);
           set({ isLoading: false });
         } catch (error: any) {
           set({ error: error.message, isLoading: false });

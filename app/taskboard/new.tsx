@@ -11,9 +11,11 @@ import DraggableFlatList, {
   ScaleDecorator,
 } from 'react-native-draggable-flatlist';
 import { TagsInput } from '../../components/TagsInput';
-import { useMutation } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import {
+  GestureHandlerRootView,
+  ScrollView,
+} from 'react-native-gesture-handler';
 import DraggableList from 'react-draggable-list';
 import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
 import { useTaskBoardStore } from '../../utils/manageTaskBoards';
@@ -88,7 +90,7 @@ export default function Task() {
         tags,
       });
       console.log(uuid);
-      router.push(`/taskgroup/${uuid}`);
+      router.push(`/taskboard/${uuid}`);
     } catch (error) {
       console.error('Failed to create task board:', error);
     }
@@ -128,7 +130,7 @@ export default function Task() {
 
   return (
     <GestureHandlerRootView>
-      <View className="px-8 flex flex-col gap-8">
+      <ScrollView className="px-8 flex flex-col gap-8">
         <View className="flex flex-col gap-2">
           <Text className="text-text">Name: </Text>
           <TextInput
@@ -218,7 +220,7 @@ export default function Task() {
         >
           <Text className="text-background text-center">Create</Text>
         </Pressable>
-      </View>
+      </ScrollView>
     </GestureHandlerRootView>
   );
 }

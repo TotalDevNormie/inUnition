@@ -6,19 +6,7 @@ import * as NavigationBar from 'expo-navigation-bar';
 import { MD3DarkTheme, Provider as PaperProvider } from 'react-native-paper';
 import { useEffect } from 'react';
 import { useAuthStore } from '../utils/useAuthStore';
-
-export const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      networkMode: 'always',
-      throwOnError: false,
-    },
-    mutations: {
-      networkMode: 'always',
-      throwOnError: false,
-    },
-  },
-});
+import { SearchProvider } from '../utils/SearchContext';
 
 const theme = {
   ...MD3DarkTheme,
@@ -51,8 +39,8 @@ export default function Layout() {
     };
   }, []);
   return (
-    <QueryClientProvider client={queryClient}>
-      <GestureHandlerRootView>
+    <SearchProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
         <PaperProvider theme={theme}>
           <Stack
             screenOptions={{
@@ -65,6 +53,6 @@ export default function Layout() {
           </Stack>
         </PaperProvider>
       </GestureHandlerRootView>
-    </QueryClientProvider>
+    </SearchProvider>
   );
 }

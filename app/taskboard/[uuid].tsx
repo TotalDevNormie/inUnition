@@ -10,6 +10,7 @@ import { AntDesign, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import {
   BottomSheetModal,
   BottomSheetModalProvider,
+  BottomSheetScrollView,
   BottomSheetTextInput,
   BottomSheetView,
 } from '@gorhom/bottom-sheet';
@@ -26,6 +27,8 @@ export default function Tasks() {
   const [columnRefs, setColumnRefs] = useState<ColumnRefs>({});
   const [newName, setNewName] = useState('');
   const [newDescription, setNewDescription] = useState('');
+  const [taskTags, setTaskTags] = useState<string[]>([]);
+  const [taskDueDate, setTaskDueDate] = useState('');
   const newTaskSheet = useRef<BottomSheetModal>(null);
   const settingsSheet = useRef<BottomSheetModal>(null);
   const [openModal, setOpenModal] = useState<'newTask' | 'settings' | false>(
@@ -37,8 +40,7 @@ export default function Tasks() {
   const [taskEdit, setTaskEdit] = useState<false | Task>(false);
 
   const { getTaskBoard, saveTaskBoard, deleteTaskBoard } = useTaskBoardStore();
-  const { tasksFromBoard, tasks, saveTask, deleteTask } = useTaskStore();
-  console.log(tasks, tasksFromBoard(uuid as string));
+  const { tasksFromBoard, getTask, saveTask, deleteTask } = useTaskStore();
 
   const updateColumnRef = useCallback(
     (status: string, ref: AnimatedRef<Animated.View>) => {
@@ -51,24 +53,23 @@ export default function Tasks() {
   );
 
   useEffect(() => {
-    console.log('openModal', openModal, taskEdit);
+    // console.log('openModal', openModal, taskEdit);
     if (openModal === 'settings') {
       setNewName(getTaskBoard(uuid as string)?.name || '');
       setNewDescription(getTaskBoard(uuid as string)?.description || '');
       setTags(getTaskBoard(uuid as string)?.tags || []);
       setDueDate(getTaskBoard(uuid as string)?.endsAt || '');
-      setIsInitialLoad(false);
       settingsSheet.current?.present();
     } else if (openModal === 'newTask' || taskEdit) {
       newTaskSheet.current?.present();
     } else {
-      console.log('dismiss', openModal, taskEdit);
       newTaskSheet?.current?.dismiss();
       settingsSheet?.current?.dismiss();
     }
   }, [openModal, taskEdit]);
 
   useEffect(() => {
+    setIsInitialLoad(false);
     try {
       parse(uuid as string);
       setIsInvalidUUID(false);
@@ -81,8 +82,16 @@ export default function Tasks() {
     if (isInitialLoad) {
       return;
     }
+    console.log('save', {
+      uuid: uuid as string,
+      name: newName,
+      description: newDescription,
+      tags,
+      endsAt: dueDate,
+    });
 
     saveTaskBoard({
+      uuid: uuid as string,
       name: newName,
       description: newDescription,
       tags,
@@ -92,13 +101,16 @@ export default function Tasks() {
 
   const createTask = async () => {
     try {
-      console.log('works');
       await saveTask(uuid as string, {
         name: newTaskName,
         description: newTaskDescription,
+        tags: taskTags,
+        endsAt: taskDueDate,
       });
       setNewTaskName('');
       setNewTaskDescription('');
+      setTaskTags([]);
+      setTaskDueDate('');
     } catch (error) {
       console.error('Failed to create task:', error);
     }
@@ -123,8 +135,10 @@ export default function Tasks() {
 
   const handleEditTask = useCallback((task: Task) => {
     setTaskEdit(task);
-    setNewTaskName(task.name);
-    setNewTaskDescription(task.description);
+    setNewTaskName(task?.name || '');
+    setNewTaskDescription(task?.description || '');
+    setTaskTags(task?.tags || []);
+    setTaskDueDate(task?.endsAt || '');
   }, []);
 
   const updateEditedTask = useCallback(() => {
@@ -135,12 +149,16 @@ export default function Tasks() {
         uuid: taskEdit.uuid,
         name: newTaskName,
         description: newTaskDescription,
+        tags: taskTags,
+        endsAt: taskDueDate,
       });
       handleTaskEditEnd();
     }
-  }, [taskEdit, newTaskName, newTaskDescription]);
+  }, [taskEdit, taskTags, taskDueDate, newTaskName, newTaskDescription]);
 
   const handleTaskEditEnd = useCallback(() => {
+    console.log('handleTaskEditEnd');
+
     setTaskEdit(false);
     setNewTaskName('');
     setNewTaskDescription('');
@@ -167,7 +185,7 @@ export default function Tasks() {
     <BottomSheetModalProvider>
       <GestureHandlerRootView>
         <View className="flex flex-col gap-8 mx-8 my-4">
-          <View className="flex flex-row justify-between ">
+          <View className="flex flex-row justify-between">
             <Pressable onPress={() => router.back()}>
               <Text className="text-text">
                 <AntDesign name="arrowleft" size={24} />
@@ -234,35 +252,45 @@ export default function Tasks() {
           >
             <BottomSheetView>
               <View className="flex flex-col p-8 pb-10 gap-4">
-                {taskEdit && (
-                  <Pressable
-                    onPress={() => {
-                      deleteTask(taskEdit.uuid);
-                      handleTaskEditEnd();
-                    }}
-                    className="bg-red-500 p-2 rounded-xl flex-1"
-                  >
-                    <Text className="text-text text-center">Delete Task </Text>
-                  </Pressable>
-                )}
-                <Text className="text-text mb-2">Task name:</Text>
-                <BottomSheetTextInput
-                  value={newTaskName}
-                  onChangeText={setNewTaskName}
-                  className="border text-text border-gray-300 rounded-xl p-2"
-                  onSubmitEditing={() =>
-                    taskEdit ? updateEditedTask() : createTask()
-                  }
-                />
-                <Text className="text-text mb-2">Task description:</Text>
-                <BottomSheetTextInput
-                  value={newTaskDescription}
-                  onChangeText={setNewTaskDescription}
-                  className="border text-text border-gray-300 rounded-xl p-2"
-                  onSubmitEditing={() =>
-                    taskEdit ? updateEditedTask() : createTask()
-                  }
-                />
+                <BottomSheetScrollView>
+                  {taskEdit && (
+                    <Pressable
+                      onPress={() => {
+                        deleteTask(taskEdit.uuid);
+                        handleTaskEditEnd();
+                      }}
+                      className="bg-red-500 p-2 rounded-xl flex-1"
+                    >
+                      <Text className="text-text text-center">
+                        Delete Task{' '}
+                      </Text>
+                    </Pressable>
+                  )}
+                  <Text className="text-text mb-2">Task name:</Text>
+                  <BottomSheetTextInput
+                    value={newTaskName}
+                    onChangeText={setNewTaskName}
+                    className="bg-secondary-850 text-text rounded-xl p-2"
+                    onSubmitEditing={() =>
+                      taskEdit ? updateEditedTask() : createTask()
+                    }
+                  />
+                  <Text className="text-text mb-2">Task description:</Text>
+                  <BottomSheetTextInput
+                    value={newTaskDescription}
+                    onChangeText={setNewTaskDescription}
+                    className="bg-secondary-850 text-text rounded-xl p-2"
+                    onSubmitEditing={() =>
+                      taskEdit ? updateEditedTask() : createTask()
+                    }
+                  />
+                  <TagsInput
+                    tags={taskTags}
+                    setTags={setTaskTags}
+                    inBottomSheet
+                  />
+                  <DueDateInput date={taskDueDate} setDate={setTaskDueDate} />
+                </BottomSheetScrollView>
                 <Pressable
                   className="bg-primary p-2 rounded-xl "
                   onPress={() => (taskEdit ? updateEditedTask() : createTask())}

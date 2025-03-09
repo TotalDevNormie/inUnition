@@ -1,22 +1,14 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { MMKV } from 'react-native-mmkv';
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  collection,
-  onSnapshot,
-  query,
-  where,
-  getDocs,
-} from 'firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 import NetInfo from '@react-native-community/netinfo';
-import { app } from '../firebaseConfig';
 import { useAuthStore } from './useAuthStore';
 import { useTaskBoardStore } from './manageTaskBoards';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
+import '@react-native-firebase/app';
+import { initFirebase } from '../firebaseConfig';
 
 export type Task = {
   uuid: string;
@@ -33,7 +25,9 @@ export type Task = {
 
 const storage = new MMKV();
 
-const db = getFirestore(app);
+initFirebase();
+
+const db = firestore();
 
 interface TaskState {
   tasks: { [key: string]: Task };
@@ -42,6 +36,7 @@ interface TaskState {
   };
   lastSyncTimestamp: number;
   tasksFromBoard: (boardUUID: string) => Task[];
+  getTask: (uuid: string) => Task | undefined;
   saveTask: (taskBoardUUID: string, task: Partial<Task>) => Promise<void>;
   deleteTask: (uuid: string) => Promise<void>;
   syncWithFirebase: () => Promise<void>;
@@ -75,6 +70,7 @@ export const useTaskStore = create<TaskState>()(
           ({ taskBoardUUID, status }) =>
             taskBoardUUID === boardUUID && status === 'active',
         ) || [],
+      getTask: (uuid) => get().tasks[uuid],
 
       saveTask: async (taskBoardUUID, task) => {
         const uuid = task.uuid || uuidv4();
@@ -90,33 +86,22 @@ export const useTaskStore = create<TaskState>()(
         if (!completionStatuses || completionStatuses.length === 0)
           throw new Error('No completion statuses found');
 
-        console.log(
-          completionStatuses,
-          ' should work ',
-          task?.completionStatus,
-          completionStatuses.includes(task?.completionStatus),
-        );
         let newCompletionStatus: string;
         if (
           task?.completionStatus &&
           completionStatuses.includes(task.completionStatus)
         ) {
-          console.log('works');
           newCompletionStatus = task.completionStatus;
         } else if (
           oldTask &&
           oldTask.completionStatus &&
           completionStatuses.includes(oldTask.completionStatus)
         ) {
-          console.log('old task');
           newCompletionStatus = oldTask.completionStatus;
         } else {
-          console.log('default');
           newCompletionStatus = completionStatuses[0];
         }
 
-        console.log(newCompletionStatus);
-        console.log('works', taskBoardUUID);
         const updatedTask: Task = {
           ...currentTasks[uuid],
           ...task,
@@ -127,6 +112,8 @@ export const useTaskStore = create<TaskState>()(
           updatedAt: new Date().toISOString(),
           createdAt: oldTask?.createdAt || new Date().toISOString(),
         };
+
+        console.log(updatedTask, task);
 
         set({
           tasks: {
@@ -147,7 +134,7 @@ export const useTaskStore = create<TaskState>()(
             const user = useAuthStore.getState().user;
             if (!user || !user.uid) throw new Error('User not authenticated');
 
-            await setDoc(doc(db, 'tasks', task.uuid), {
+            await db.collection('tasks').doc(task.uuid).set({
               ...updatedTask,
               userUid: user.uid,
             });
@@ -190,7 +177,7 @@ export const useTaskStore = create<TaskState>()(
           try {
             const user = useAuthStore.getState().user;
             if (!user || !user.uid) throw new Error('User not authenticated');
-            await setDoc(doc(db, 'tasks', uuid), {
+            await db.collection('tasks').doc(uuid).set({
               ...softDeletedTask,
               userUid: user.uid,
             });
@@ -212,11 +199,10 @@ export const useTaskStore = create<TaskState>()(
         const { tasks, pendingChanges } = state;
 
         try {
-          const tasksQuery = query(
-            collection(db, 'tasks'),
-            where('userUid', '==', user.uid),
-          );
-          const querySnapshot = await getDocs(tasksQuery);
+          const tasksQuery = db
+            .collection('tasks')
+            .where('userUid', '==', user.uid);
+          const querySnapshot = await tasksQuery.get();
           const firebaseTasks: { [key: string]: Task } = {};
 
           querySnapshot.forEach((doc) => {
@@ -273,7 +259,7 @@ export const useTaskStore = create<TaskState>()(
 
             if (!firebaseTask || pendingChange) {
               try {
-                await setDoc(doc(db, 'tasks', uuid), {
+                await db.collection('tasks').doc(uuid).set({
                   ...localTask,
                   userUid: user.uid,
                 });
@@ -310,12 +296,11 @@ const setupFirebaseListener = (userId: string | null) => {
   }
 
   if (userId) {
-    const tasksQuery = query(
-      collection(db, 'tasks'),
-      where('userUid', '==', userId),
-    );
+    const tasksQuery = db
+      .collection('tasks')
+      .where('userUid', '==', userId);
 
-    unsubscribe = onSnapshot(tasksQuery, () => {
+    unsubscribe = tasksQuery.onSnapshot(() => {
       const store = useTaskStore.getState();
       if (store.lastSyncTimestamp < Date.now() - 1000) {
         store.syncWithFirebase();
@@ -329,12 +314,3 @@ NetInfo.addEventListener((state) => {
     useTaskStore.getState().syncWithFirebase();
   }
 });
-
-useAuthStore.subscribe(
-  (state) => {
-    setupFirebaseListener(state.user?.uid);
-  },
-  (state) => state.user,
-);
-
-setupFirebaseListener(useAuthStore.getState().user?.uid);

@@ -1,20 +1,11 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { MMKV } from 'react-native-mmkv';
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  collection,
-  getDocs,
-  onSnapshot,
-  query,
-  where,
-} from 'firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
 import NetInfo from '@react-native-community/netinfo';
-import { app } from '../firebaseConfig';
 import debounce from './debounce';
 import { useAuthStore } from './useAuthStore';
+import '@react-native-firebase/app';
 
 export type Note = {
   uuid: string;
@@ -31,7 +22,7 @@ export type Note = {
 
 const storage = new MMKV();
 
-const db = getFirestore(app);
+const db = firestore();
 
 interface NoteState {
   notes: { [key: string]: Note };
@@ -68,7 +59,7 @@ export const useNoteStore = create<NoteState>()(
         Object.values(get().notes).filter(({ state }) => state === 'active'),
 
       saveNote: async (note: Partial<Note>) => {
-        if (!note.uuid || note.uuid == undefined)
+        if (!note.uuid)
           throw new Error('Note uuid is required');
         const timestamp = Date.now();
         const currentNotes = get().notes;
@@ -121,7 +112,7 @@ export const useNoteStore = create<NoteState>()(
               const user = useAuthStore.getState().user;
               if (!user || !user.uid) throw new Error('User not authenticated');
 
-              await setDoc(doc(db, 'notes', note.uuid), {
+              await db.collection('notes').doc(note.uuid).set({
                 ...updatedNote,
                 userUid: user.uid,
               });
@@ -166,7 +157,7 @@ export const useNoteStore = create<NoteState>()(
           try {
             const user = useAuthStore.getState().user;
             if (!user || !user.uid) throw new Error('User not authenticated');
-            await setDoc(doc(db, 'notes', uuid), {
+            await db.collection('notes').doc(uuid).set({
               ...softDeletedNote,
               userUid: user.uid,
             });
@@ -190,11 +181,11 @@ export const useNoteStore = create<NoteState>()(
 
         try {
           // 1. Fetch notes from Firebase
-          const notesQuery = query(
-            collection(db, 'notes'),
-            where('userUid', '==', user.uid),
-          );
-          const querySnapshot = await getDocs(notesQuery);
+          const notesQuery = db
+            .collection('notes')
+            .where('userUid', '==', user.uid);
+
+          const querySnapshot = await notesQuery.get();
           const firebaseNotes: { [key: string]: Note } = {};
 
           querySnapshot.forEach((doc) => {
@@ -281,7 +272,7 @@ export const useNoteStore = create<NoteState>()(
             if (!firebaseNote || pendingChange) {
               // If it's a new note or has pending changes, push to Firebase
               try {
-                await setDoc(doc(db, 'notes', uuid), {
+                await db.collection('notes').doc(uuid).set({
                   ...localNote,
                   userUid: user.uid,
                 });
@@ -323,12 +314,11 @@ const setupFirebaseListener = (userId: string | null) => {
 
   // Only setup listener if there's a logged-in user
   if (userId) {
-    const notesQuery = query(
-      collection(db, 'notes'),
-      where('userId', '==', userId),
-    );
+    const notesQuery = db
+      .collection('notes')
+      .where('userUid', '==', userId);
 
-    unsubscribe = onSnapshot(notesQuery, () => {
+    unsubscribe = notesQuery.onSnapshot(() => {
       const store = useNoteStore.getState();
       if (store.lastSyncTimestamp < Date.now() - 1000) {
         // Prevent sync loops

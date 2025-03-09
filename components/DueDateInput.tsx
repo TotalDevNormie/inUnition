@@ -2,12 +2,7 @@ import { AntDesign } from '@expo/vector-icons';
 import moment from 'moment';
 import { useCallback, useEffect, useState } from 'react';
 import { View, Text, Pressable } from 'react-native';
-import { Button } from 'react-native-paper';
-import {
-  DatePickerInput,
-  DatePickerModal,
-  TimePickerModal,
-} from 'react-native-paper-dates';
+import { DatePickerModal, TimePickerModal } from 'react-native-paper-dates';
 
 export default function DueDateInput({ date, setDate }) {
   const [visible, setVisible] = useState(false);
@@ -50,7 +45,7 @@ export default function DueDateInput({ date, setDate }) {
   );
 
   return (
-    <View className="flex flex-col gap-4 py-8">
+    <View className="flex flex-col gap-4">
       <Text className="text-text">Due date</Text>
       <Pressable onPress={() => setVisibleDate(true)}>
         <View className="flex flex-row justify-between p-4 bg-secondary-850 rounded-xl">
