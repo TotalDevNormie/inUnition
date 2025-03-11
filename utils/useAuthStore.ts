@@ -2,15 +2,23 @@
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import { MMKV } from 'react-native-mmkv';
+import {
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  updateProfile as firebaseUpdateProfile,
+  updateEmail as firebaseUpdateEmail,
+  signOut,
+  sendPasswordResetEmail,
+  deleteUser,
+} from 'firebase/auth';
 import { useNoteStore } from './manageNotes';
 import { useTaskStore } from './manageTasks';
 import { useTaskBoardStore } from './manageTaskBoards';
-import { app, authentication } from '../firebaseConfig';
-
-app;
+import { auth } from '../firebaseConfig';
 
 // Define the User type
-type User = {
+export type User = {
   uid: string;
   email: string | null;
   displayName: string | null;
@@ -18,35 +26,30 @@ type User = {
   // Add any other user properties you need
 };
 
-const clearPreviousUserData = () => {
+const cleanUpData = () => {
   useNoteStore.setState({
-    pendingChanges: {},
-    lastSyncTimestamp: 0,
     notes: {},
+    pendingChanges: {},
+    lastSyncTimestamp: 0,
   });
-  useNoteStore.getState().syncWithFirebase();
   useTaskStore.setState({
-    pendingChanges: {},
-    lastSyncTimestamp: 0,
     tasks: {},
-  });
-  useTaskStore.getState().syncWithFirebase();
-  useTaskBoardStore.setState({
     pendingChanges: {},
     lastSyncTimestamp: 0,
-    taskBoards: {},
   });
-  useTaskBoardStore.getState().syncWithFirebase();
+  useTaskBoardStore.setState({
+    taskBoards: {},
+    pendingChanges: {},
+    lastSyncTimestamp: 0,
+  });
 };
 
 interface AuthState {
-  // State
   user: User | null;
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
 
-  // Actions
   login: (email: string, password: string) => Promise<void>;
   register: (
     email: string,
@@ -60,9 +63,9 @@ interface AuthState {
   clearError: () => void;
   initializeAuth: () => Promise<(() => void) | undefined>;
 }
+
 const storage = new MMKV();
 
-// Create the MMKV storage adapter for Zustand
 const zustandStorage = {
   getItem: (name: string) => {
     const value = storage.getString(name);
@@ -79,18 +82,15 @@ const zustandStorage = {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
-      // Initial state
       user: null,
       isAuthenticated: false,
       isLoading: true,
       error: null,
 
-      // Initialize auth state from Firebase
       initializeAuth: async () => {
         set({ isLoading: true });
         try {
-          // Set up auth state observer
-          const unsubscribe = authentication.onAuthStateChanged((firebaseUser) => {
+          const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
             if (firebaseUser) {
               const user: User = {
                 uid: firebaseUser.uid,
@@ -102,9 +102,8 @@ export const useAuthStore = create<AuthState>()(
             } else {
               set({ user: null, isAuthenticated: false, isLoading: false });
             }
+            cleanUpData();
           });
-
-          // Clean up observer on app unmount (you'll need to call this elsewhere)
           return unsubscribe;
         } catch (error: any) {
           set({
@@ -115,15 +114,14 @@ export const useAuthStore = create<AuthState>()(
         }
       },
 
-      // Login with email and password
       login: async (email: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const userCredential = await authentication.signInWithEmailAndPassword(
+          const userCredential = await signInWithEmailAndPassword(
+            auth,
             email,
             password,
           );
-
           if (userCredential.user) {
             const user: User = {
               uid: userCredential.user.uid,
@@ -132,14 +130,13 @@ export const useAuthStore = create<AuthState>()(
               photoURL: userCredential.user.photoURL,
             };
             set({ user, isAuthenticated: true, isLoading: false });
-            // clearPreviousUserData();
+            cleanUpData();
           }
         } catch (error: any) {
           set({ error: error.message, isLoading: false });
         }
       },
 
-      // Register new user
       register: async (
         email: string,
         password: string,
@@ -147,103 +144,83 @@ export const useAuthStore = create<AuthState>()(
       ) => {
         set({ isLoading: true, error: null });
         try {
-          const userCredential = await authentication.createUserWithEmailAndPassword(
+          const userCredential = await createUserWithEmailAndPassword(
+            auth,
             email,
             password,
           );
-
           // Update profile with display name
-          await userCredential.user.updateProfile({
-            displayName,
-          });
-
+          await firebaseUpdateProfile(userCredential.user, { displayName });
           const user: User = {
             uid: userCredential.user.uid,
             email: userCredential.user.email,
             displayName,
             photoURL: null,
           };
-
           set({ user, isAuthenticated: true, isLoading: false });
-          // clearPreviousUserData();
+          cleanUpData();
         } catch (error: any) {
           set({ error: error.message, isLoading: false });
         }
       },
 
-      // Logout user
       logout: async () => {
         set({ isLoading: true, error: null });
         try {
-          await authentication.signOut();
+          await signOut(auth);
           set({ user: null, isAuthenticated: false, isLoading: false });
-          // clearPreviousUserData();
+          cleanUpData();
         } catch (error: any) {
           set({ error: error.message, isLoading: false });
         }
       },
 
-      // Update user profile
       updateProfile: async (data: Partial<User>) => {
         set({ isLoading: true, error: null });
         try {
-          const currentUser = authentication.currentUser;
+          const currentUser = auth.currentUser;
+          if (!currentUser) throw new Error('User not authenticated');
 
-          if (!currentUser) {
-            throw new Error('User not authenticated');
-          }
-
-          await currentUser.updateProfile({
+          await firebaseUpdateProfile(currentUser, {
             displayName: data.displayName || currentUser.displayName,
             photoURL: data.photoURL || currentUser.photoURL,
           });
 
           if (data.email && data.email !== currentUser.email) {
-            await currentUser.updateEmail(data.email);
+            await firebaseUpdateEmail(currentUser, data.email);
           }
 
-          // Get updated user data
-          const updatedUser = {
-            ...get().user,
-            ...data,
-          } as User;
-
+          const updatedUser = { ...get().user, ...data } as User;
           set({ user: updatedUser, isLoading: false });
         } catch (error: any) {
           set({ error: error.message, isLoading: false });
         }
       },
 
-      // Delete user account
       deleteAccount: async () => {
         set({ isLoading: true, error: null });
         try {
-          const currentUser = authentication.currentUser;
+          const currentUser = auth.currentUser;
+          if (!currentUser) throw new Error('User not authenticated');
 
-          if (!currentUser) {
-            throw new Error('User not authenticated');
-          }
-
-          await currentUser.delete();
+          await deleteUser(currentUser);
           set({ user: null, isAuthenticated: false, isLoading: false });
-          // clearPreviousUserData();
+          cleanUpData();
         } catch (error: any) {
           set({ error: error.message, isLoading: false });
         }
       },
 
-      // Reset password
       resetPassword: async (email: string) => {
         set({ isLoading: true, error: null });
         try {
-          await authentication.sendPasswordResetEmail(email);
+          await sendPasswordResetEmail(auth, email);
           set({ isLoading: false });
         } catch (error: any) {
           set({ error: error.message, isLoading: false });
         }
       },
 
-      // Clear any errors
       clearError: () => {
         set({ error: null });
       },

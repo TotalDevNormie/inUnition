@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1050891229502",
+    "project_id": "inunition",
+    "storage_bucket": "inunition.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1050891229502:android:77bc6cfeb3bd227157f46f",
+        "android_client_info": {
+          "package_name": "com.totlalnormie.inunition"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1050891229502-bv8s5fvddov9mqud1pk07s6d0qcl660n.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCSPIVC6vX-zpQ-F9oGJyjJayYlsPiMPhI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1050891229502-bv8s5fvddov9mqud1pk07s6d0qcl660n.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

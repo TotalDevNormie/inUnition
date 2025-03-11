@@ -5,11 +5,9 @@ import { TabRouter, useRoute } from '@react-navigation/native';
 import NavLink from './NavLink';
 import { Feather, Ionicons, MaterialIcons, Octicons } from '@expo/vector-icons';
 import { useState } from 'react';
-import { useAuth } from './auth/AuthContext';
 import { ScrollView } from 'react-native-gesture-handler';
-import { useRouteContext } from './RouteContext';
-import WebSearchPopup from '../components/WebSearchPopup';
 import SearchButton from '../components/SearchButton';
+import { useAuthStore } from '../utils/useAuthStore';
 
 export default function WebTabLayout() {
   return (
@@ -34,7 +32,7 @@ export default function WebTabLayout() {
 }
 const Sidebar = () => {
   const theme = useColorScheme();
-  const { user, isLoadingUser } = useAuth();
+  const { user, isLoading } = useAuthStore();
 
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();

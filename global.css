@@ -4,20 +4,13 @@
 
 * {
   box-sizing: border-box;
+  outline: none;
 }
 
 body {
-  /* @apply bg-background;
-    @apply text-text; */
-  /* @apply font-body;
-    @apply antialiased; */
+  @apply bg-background text-text font-body antialiased;
 }
 
 .specific-issue > * {
   flex-grow: 1;
-}
-
-input:focus,
-textarea:focus {
-  outline: none;
 }

@@ -1,10 +1,10 @@
 import { Redirect } from 'expo-router';
-import { useAuth } from '../../components/auth/AuthContext';
 import { useEffect, useState } from 'react';
 import { Text, View, ActivityIndicator } from 'react-native';
+import { useAuthStore } from '../../utils/useAuthStore';
 
 export default function Logout() {
-  const { logout } = useAuth();
+  const { logout } = useAuthStore();
   const [isLoggingOut, setIsLoggingOut] = useState(true);
   const [isSuccess, setIsSuccess] = useState(false);
   const [error, setError] = useState<Error | null>(null);
