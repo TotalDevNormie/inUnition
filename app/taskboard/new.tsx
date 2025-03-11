@@ -130,7 +130,7 @@ export default function Task() {
 
   return (
     <GestureHandlerRootView>
-      <ScrollView className="px-8 flex flex-col gap-8">
+      <ScrollView className="px-8 flex flex-col gap-8 mx-auto max-w-[44rem]">
         <View className="flex flex-col gap-2">
           <Text className="text-text">Name: </Text>
           <TextInput

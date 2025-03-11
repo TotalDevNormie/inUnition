@@ -1,19 +1,37 @@
-import AsyncStorage from '@react-native-async-storage/async-storage';
-import firebase, { initializeApp } from '@react-native-firebase/app';
-import { Platform } from 'react-native';
+import { initializeApp } from 'firebase/app';
+import { getFirestore } from 'firebase/firestore';
+import { getAuth } from 'firebase/auth';
+import Constants from 'expo-constants';
 
-export const initFirebase = () => {
-  if (Platform.OS === 'web') {
-    firebase.setReactNativeAsyncStorage(AsyncStorage);
-    const firebaseConfig = {
-      apiKey: 'AIzaSyCnWGoxigkecLpon1sPNtJqOBYFNxaZ-lI',
-      authDomain: 'inunition.firebaseapp.com',
-      projectId: 'inunition',
-      storageBucket: 'inunition.firebasestorage.app',
-      messagingSenderId: '1050891229502',
-      appId: '1:1050891229502:web:527f5f513aca413c57f46f',
-      measurementId: 'G-LCJ9RKD17N',
-    };
-    initializeApp(firebaseConfig);
-  }
+const expoConfig = Constants.expoConfig;
+
+if (!expoConfig || !expoConfig.extra) {
+  throw new Error('Missing expoConfig.extra in your configuration.');
+}
+
+const {
+  apiKey,
+  authDomain,
+  projectId,
+  storageBucket,
+  messagingSenderId,
+  appId,
+  measurementId,
+  databaseURL,
+} = expoConfig.extra;
+
+const firebaseConfig = {
+  apiKey,
+  authDomain,
+  projectId,
+  storageBucket,
+  messagingSenderId,
+  appId,
+  measurementId,
+  databaseURL,
 };
+
+const app = initializeApp(firebaseConfig);
+
+export const db = getFirestore(app);
+export const auth = getAuth(app);

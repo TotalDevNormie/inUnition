@@ -10,20 +10,13 @@ import { Link, Redirect, useRouter } from 'expo-router';
 import { useAuthStore } from '../../utils/useAuthStore';
 
 export default function Login() {
-  const {
-    user,
-    isAuthenticated,
-    isLoading: authIsLoading,
-    login,
-    error,
-    clearError,
-  } = useAuthStore(); // Use the auth store
+  const { user, isAuthenticated, isLoading, login, error, clearError } =
+    useAuthStore(); // Use the auth store
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  // const [error, setError] = useState<Error | null>(null); // No longer needed, using store's error
-  const [isSuccess, setIsSuccess] = useState(false);
   const router = useRouter();
+
+  console.log(error, isLoading);
 
   // If already logged in, redirect to home
   if (isAuthenticated && user) {
@@ -35,22 +28,12 @@ export default function Login() {
       // setError(new Error('Email and password are required')); // Use store's error
       return;
     }
+    await login(email, password); // Call the login action from the store
 
-    setIsLoading(true);
     clearError(); // Clear any previous errors
-
-    try {
-      await login(email, password); // Call the login action from the store
-      setIsSuccess(true);
-      router.replace('/');
-    } catch (err) {
-      // setError(err instanceof Error ? err : new Error('Login failed')); // Store handles errors
-    } finally {
-      setIsLoading(false);
-    }
   };
 
-  if (isSuccess) return <Redirect href="/" />;
+  if (isAuthenticated) return <Redirect href="/" />;
 
   return (
     <View className="p-4 flex flex-col gap-4">
@@ -65,7 +48,7 @@ export default function Login() {
         value={email}
         keyboardType="email-address"
         autoCapitalize="none"
-        editable={!isLoading && !authIsLoading}
+        editable={!isLoading}
         onFocus={clearError}
       />
 
@@ -75,18 +58,16 @@ export default function Login() {
         onChangeText={setPassword}
         value={password}
         className="border-2 border-secondary rounded-lg p-2 text-text"
-        editable={!isLoading && !authIsLoading}
+        editable={!isLoading}
         onFocus={clearError}
       />
 
       <Pressable
-        className={`bg-primary p-2 rounded-lg ${
-          isLoading || authIsLoading ? 'opacity-70' : ''
-        }`}
+        className={`bg-primary p-2 rounded-lg ${isLoading ? 'opacity-70' : ''}`}
         onPress={handleLogin}
-        disabled={isLoading || authIsLoading}
+        disabled={isLoading}
       >
-        {isLoading || authIsLoading ? (
+        {isLoading ? (
           <ActivityIndicator color="#ffffff" />
         ) : (
           <Text className="text-background text-center">Log in</Text>

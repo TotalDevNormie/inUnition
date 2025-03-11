@@ -54,7 +54,7 @@ export default function SearchResults() {
             `${type === 'note' ? '/note' : '/taskboard'}/${type === 'task' ? data.taskBoardUUID : data.uuid}`,
           )
         }
-        className="bg-secondary-850 p-4 rounded-xl mb-3"
+        className="bg-secondary-850 p-4 rounded-xl mb-4 ml-4"
       >
         <View className="flex-row items-center mb-2">
           <View className="w-8 h-8 bg-primary rounded-full items-center justify-center mr-3">

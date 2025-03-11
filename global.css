@@ -4,6 +4,7 @@
 
 * {
   box-sizing: border-box;
+  outline: none;
 }
 
 body {
@@ -15,9 +16,4 @@ body {
 
 .specific-issue > * {
   flex-grow: 1;
-}
-
-input:focus,
-textarea:focus {
-  outline: none;
 }

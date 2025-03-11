@@ -117,6 +117,9 @@ export default function DraggableTask({
           {task?.description && (
             <Text className="text-text/50">{task?.description}</Text>
           )}
+          {task?.tags && (
+            <Text className="text-secondary">{task?.tags?.join(', ')}</Text>
+          )}
           {task?.endsAt && (
             <Text className="text-primary">
               Due {moment(task?.endsAt).fromNow()}

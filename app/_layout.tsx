@@ -7,6 +7,9 @@ import { MD3DarkTheme, Provider as PaperProvider } from 'react-native-paper';
 import { useEffect } from 'react';
 import { useAuthStore } from '../utils/useAuthStore';
 import { SearchProvider } from '../utils/SearchContext';
+import { setupTasksListener } from '../utils/manageTasks';
+import { setupTaskBoardsListener } from '../utils/manageTaskBoards';
+import { setupNotesListener } from '../utils/manageNotes';
 
 const theme = {
   ...MD3DarkTheme,
@@ -24,20 +27,39 @@ const theme = {
 };
 
 export default function Layout() {
-  const { initializeAuth, isLoading } = useAuthStore();
+  const { initializeAuth, isLoading, user } = useAuthStore();
 
+  // Initialize auth listener for Firebase auth state changes
   useEffect(() => {
     NavigationBar.setPositionAsync('absolute');
     NavigationBar.setBackgroundColorAsync('#000000');
     NavigationBar.setBehaviorAsync('overlay-swipe');
 
-    const unsubscribe = initializeAuth();
+    const unsubscribeAuth = initializeAuth();
     return () => {
-      if (typeof unsubscribe === 'function') {
-        unsubscribe();
+      if (typeof unsubscribeAuth === 'function') {
+        unsubscribeAuth();
       }
     };
   }, []);
+
+  // Set up Firebase data listeners once auth state is known
+  useEffect(() => {
+    if (user?.uid) {
+      // User is authenticated, so set up Firebase listeners
+      setupTasksListener(user.uid);
+      setupNotesListener(user.uid);
+      setupTaskBoardsListener(user.uid);
+    } else {
+      // No user logged in, unsubscribing by passing null/undefined
+      setupTasksListener(null);
+      setupNotesListener(null);
+      setupTaskBoardsListener(undefined);
+    }
+    // Optionally, you can return cleanup functions here if your setup
+    // functions support returning unsubscribes (if they maintained local state)
+  }, [user]);
+
   return (
     <SearchProvider>
       <GestureHandlerRootView style={{ flex: 1 }}>
