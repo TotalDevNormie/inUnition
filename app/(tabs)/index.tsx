@@ -6,10 +6,12 @@ import moment from 'moment';
 import 'react-native-get-random-values';
 import { v4 } from 'uuid';
 import { Task, useTaskStore } from '../../utils/manageTasks';
+import { useTaskBoardStore } from '../../utils/manageTaskBoards';
 
 export default function Home() {
   const { activeNotesArray, notes } = useNoteStore();
   const { activeTasksArray } = useTaskStore();
+  const { getTaskBoard } = useTaskBoardStore();
 
   // Filter and sort relevant notes
   const relevantNotes: Note[] = activeNotesArray()
@@ -68,7 +70,7 @@ export default function Home() {
                   >
                     <View className="flex flex-row gap-2">
                       <Text className="text-xl text-text flex-1">
-                        {note?.title?.length > 30
+                        {note?.title && note?.title?.length > 30
                           ? note?.title.slice(0, 27) + '...'
                           : note?.title}
                       </Text>
@@ -77,7 +79,7 @@ export default function Home() {
                       </Text>
                     </View>
                     <Text className="text-text max-h-36 ">
-                      {note?.content?.length > 100
+                      {note?.content && note?.content?.length > 100
                         ? note?.content.slice(0, 97) + '...'
                         : note?.content}
                     </Text>
@@ -122,7 +124,9 @@ export default function Home() {
                 contentContainerStyle={{ gap: 8 }}
                 renderItem={({ item: task }) => (
                   <Pressable
-                    onPress={() => router.push(`/task/${task.uuid}`)}
+                    onPress={() =>
+                      router.push(`/taskboard/${task.taskBoardUUID}`)
+                    }
                     key={task.uuid}
                     className={`bg-secondary-850 ${
                       task?.endsAt ? 'border-2 border-primary' : ''
@@ -135,13 +139,16 @@ export default function Home() {
                           : task.name}
                       </Text>
                       <Text className="color-text ">
-                        <FontAwesome5 name="edit" size={24} />
+                        <FontAwesome5 name="task" size={24} />
                       </Text>
                     </View>
                     <Text className="text-text max-h-36 ">
                       {task?.description?.length > 100
                         ? task.description.slice(0, 97) + '...'
                         : task.description}
+                    </Text>
+                    <Text className="text-primary">
+                      {getTaskBoard(task.taskBoardUUID)?.name}
                     </Text>
                     <View className="mt-auto">
                       {task?.endsAt ? (
@@ -159,14 +166,7 @@ export default function Home() {
               />
             </View>
           ) : (
-            <View>
-              <Link
-                className="color-background p-2 bg-primary rounded-xl text-center"
-                href={`task/${v4()}`}
-              >
-                No tasks, create one
-              </Link>
-            </View>
+            <Text>No tasks</Text>
           )}
         </View>
       </View>

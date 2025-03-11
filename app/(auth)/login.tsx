@@ -5,7 +5,7 @@ import {
   Pressable,
   ActivityIndicator,
 } from 'react-native';
-import { useState } from 'react';
+import { useState, useEffect } from 'react'; // Import useEffect
 import { Link, Redirect, useRouter } from 'expo-router';
 import { useAuthStore } from '../../utils/useAuthStore';
 
@@ -16,7 +16,12 @@ export default function Login() {
   const [password, setPassword] = useState('');
   const router = useRouter();
 
-  console.log(error, isLoading);
+  // Clear error on component unmount (optional, but good practice)
+  useEffect(() => {
+    return () => {
+      clearError();
+    };
+  }, [clearError]);
 
   // If already logged in, redirect to home
   if (isAuthenticated && user) {
@@ -25,15 +30,12 @@ export default function Login() {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      // setError(new Error('Email and password are required')); // Use store's error
+      // Consider setting a specific error message for this case
+      // setError("Email and password are required");
       return;
     }
     await login(email, password); // Call the login action from the store
-
-    clearError(); // Clear any previous errors
   };
-
-  if (isAuthenticated) return <Redirect href="/" />;
 
   return (
     <View className="p-4 flex flex-col gap-4">

@@ -112,7 +112,7 @@ export const useNoteStore = create<NoteState>()(
         if (netInfo.isConnected && authenticated) {
           console.log('saving note');
           debounce(async () => {
-            console.log('works')
+            console.log('works');
             try {
               const user = useAuthStore.getState().user;
               if (!user || !user.uid) throw new Error('User not authenticated');
