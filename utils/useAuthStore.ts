@@ -121,7 +121,6 @@ export const useAuthStore = create<AuthState>()(
             email,
             password,
           );
-          console.log('userCredential', userCredential);
           if (userCredential.user) {
             const user: User = {
               uid: userCredential.user.uid,
