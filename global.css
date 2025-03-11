@@ -1,0 +1,19 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+* {
+  box-sizing: border-box;
+  outline: none;
+}
+
+body {
+  /* @apply bg-background;
+    @apply text-text; */
+  /* @apply font-body;
+    @apply antialiased; */
+}
+
+.specific-issue > * {
+  flex-grow: 1;
+}
