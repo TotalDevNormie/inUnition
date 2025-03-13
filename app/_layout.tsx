@@ -1,10 +1,11 @@
-import { Stack } from 'expo-router/stack';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import '../global.css';
+import { Stack, useRouter } from 'expo-router';
+import { useEffect } from 'react';
+import { MMKV } from 'react-native-mmkv';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as NavigationBar from 'expo-navigation-bar';
 import { MD3DarkTheme, Provider as PaperProvider } from 'react-native-paper';
-import { useEffect } from 'react';
+
+import '../global.css';
 import { useAuthStore } from '../utils/useAuthStore';
 import { SearchProvider } from '../utils/SearchContext';
 import { setupTasksListener } from '../utils/manageTasks';
@@ -26,10 +27,12 @@ const theme = {
   dark: true,
 };
 
+const storage = new MMKV();
+
 export default function Layout() {
   const { initializeAuth, isLoading, user } = useAuthStore();
+  const router = useRouter();
 
-  // Initialize auth listener for Firebase auth state changes
   useEffect(() => {
     NavigationBar.setPositionAsync('absolute');
     NavigationBar.setBackgroundColorAsync('#000000');
@@ -43,22 +46,26 @@ export default function Layout() {
     };
   }, []);
 
-  // Set up Firebase data listeners once auth state is known
   useEffect(() => {
     if (user?.uid) {
-      // User is authenticated, so set up Firebase listeners
       setupTasksListener(user.uid);
       setupNotesListener(user.uid);
       setupTaskBoardsListener(user.uid);
     } else {
-      // No user logged in, unsubscribing by passing null/undefined
       setupTasksListener(null);
       setupNotesListener(null);
       setupTaskBoardsListener(undefined);
     }
-    // Optionally, you can return cleanup functions here if your setup
-    // functions support returning unsubscribes (if they maintained local state)
   }, [user]);
+
+  useEffect(() => {
+    const alreadyLaunched = storage.contains('alreadyLaunched');
+
+    if (!alreadyLaunched) {
+      // If 'alreadyLaunched' doesn't exist, it's the first launch
+      router.replace('/landing');
+    }
+  }, []);
 
   return (
     <SearchProvider>
@@ -72,6 +79,7 @@ export default function Layout() {
             <Stack.Screen name="(tabs)" />
             <Stack.Screen name="(auth)" />
             <Stack.Screen name="note" />
+            <Stack.Screen name="landing" />
           </Stack>
         </PaperProvider>
       </GestureHandlerRootView>

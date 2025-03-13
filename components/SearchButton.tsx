@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Pressable, View, Platform, Text } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import WebSearchPopup from './WebSearchPopup';
 import MobileSearchPopup from './MobileSearchPopup';
 
-export default function SearchButton() {
+export default function SearchButton({ collapsed }: { collapsed: boolean }) {
   const [searchVisible, setSearchVisible] = useState(false);
 
   const openSearch = () => {
@@ -29,7 +29,11 @@ export default function SearchButton() {
           <Text className="text-text">
             <FontAwesome5 name="search" size={20} />
           </Text>
-          {Platform.OS === 'web' && <Text className="text-text">Search</Text>}
+          {Platform.OS === 'web' && (
+            <Text className={`${collapsed ? 'hidden' : ''} text-text`}>
+              Search
+            </Text>
+          )}
         </View>
       </Pressable>
 

@@ -6,7 +6,6 @@ import {
   StyleSheet,
   ActivityIndicator,
 } from 'react-native';
-import { useAuth } from '../../components/auth/AuthContext';
 import { useState } from 'react';
 import { AntDesign } from '@expo/vector-icons';
 

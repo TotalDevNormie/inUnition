@@ -36,7 +36,7 @@ export default function NoteInput({ uuid }: { uuid: string }) {
   };
 
   return (
-    <View className="h-full flex grow flex-col gap-4 px-8 py-4 ">
+    <View className="flex grow flex-col gap-4 px-8 py-4 ">
       <TextInput
         value={title}
         onChangeText={handleTitleChange}
@@ -53,7 +53,12 @@ export default function NoteInput({ uuid }: { uuid: string }) {
         textAlignVertical="top"
         parser={parseExpensiMark}
         markdownStyle={markdownStyle}
-        style={{ flex: 1, color: '#E9F1EF', borderWidth: 0, height: '100%' }}
+        style={{
+          // maxHeight: 9999,
+          color: '#E9F1EF',
+          borderWidth: 0,
+          flex: 1,
+        }}
         placeholder="Content"
         placeholderTextColor="#888"
       />

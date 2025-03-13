@@ -49,7 +49,6 @@ export default function Home() {
 
   return (
     <View className="flex flex-col gap-10 flex-1 px-8">
-      {/* Relevant Notes Section */}
       <View className="flex flex-col gap-8 ">
         <Text className="text-3xl text-text">Relevant Notes</Text>
         <View className="flex ">
@@ -138,11 +137,11 @@ export default function Home() {
                           ? task.name.slice(0, 27) + '...'
                           : task.name}
                       </Text>
-                      <Text className="color-text ">
-                        <FontAwesome5 name="task" size={24} />
+                      <Text className="color-text">
+                        <FontAwesome5 name="tasks" size={24} />
                       </Text>
                     </View>
-                    <Text className="text-text max-h-36 ">
+                    <Text className="text-text max-h-36">
                       {task?.description?.length > 100
                         ? task.description.slice(0, 97) + '...'
                         : task.description}
@@ -157,7 +156,7 @@ export default function Home() {
                         </Text>
                       ) : (
                         <Text className="text-accent">
-                          Status: {task.status}
+                          Status: {task.completionStatus}
                         </Text>
                       )}
                     </View>

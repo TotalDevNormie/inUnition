@@ -7,7 +7,7 @@ import { Link, router } from 'expo-router';
 import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import moment from 'moment';
 import { useTaskBoardStore } from '../../utils/manageTaskBoards';
-import { TaskBoard } from '../../utils/manageTaskCluster';
+import { TaskBoard } from '../../utils/manageTaskBoards';
 
 type TaskGroupWithUUID = TaskGroup & { uuid: string };
 

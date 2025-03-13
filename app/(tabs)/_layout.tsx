@@ -5,7 +5,6 @@ import NavLink from '../../components/NavLink';
 import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DarkLogo from '../../assets/darkLogo.svg';
-import { useAuth } from '../../components/auth/AuthContext';
 import SearchButton from '../../components/SearchButton';
 
 export default function TabsLayout() {

@@ -53,7 +53,7 @@ const NotePageContent: NotePage = ({ uuid }) => {
           </Pressable>
         </View>
       </View>
-      <ScrollView className="flex grow h-full">
+      <ScrollView>
         <NoteInput uuid={uuid} />
       </ScrollView>
       <BottomSheet
