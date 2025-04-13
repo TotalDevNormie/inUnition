@@ -1,9 +1,22 @@
-// Learn more https://docs.expo.io/guides/customizing-metro
-const { getDefaultConfig } = require('expo/metro-config');
-const { withNativeWind } = require('nativewind/metro');
+const { getDefaultConfig } = require("expo/metro-config");
+const { withNativeWind } = require("nativewind/metro");
 
-/** @type {import('expo/metro-config').MetroConfig} */
-// eslint-disable-next-line no-undef
-const config = getDefaultConfig(__dirname);
+module.exports = (async () => {
+  const config = await getDefaultConfig(__dirname);
 
-module.exports = withNativeWind(config, { input: './global.css' });
+  // Add support for SVG files using react-native-svg-transformer
+  config.transformer = {
+    ...config.transformer,
+    babelTransformerPath: require.resolve("react-native-svg-transformer"),
+  };
+
+  config.resolver = {
+    ...config.resolver,
+    // Exclude SVG files from assetExts
+    assetExts: config.resolver.assetExts.filter((ext) => ext !== "svg"),
+    // Include SVG files as source types
+    sourceExts: [...config.resolver.sourceExts, "svg"],
+  };
+
+  return withNativeWind(config, { input: "./global.css" });
+})();

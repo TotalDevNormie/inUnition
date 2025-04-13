@@ -3,12 +3,13 @@
     "name": "InUnition",
     "slug": "InUnition",
     "version": "1.0.0",
+    "userInterfaceStyle": "dark",
 
     "scheme": "InUnition",
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/darkLogo.png"
     },
     "plugins": ["expo-router"],
     "experiments": {
