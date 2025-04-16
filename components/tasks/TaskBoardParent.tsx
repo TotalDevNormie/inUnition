@@ -29,10 +29,10 @@ export type TaskBoardContent = React.FC<TaskBoardContentProps>;
 
 type TaskBoardParentProps = {
   TaskBoardContent: TaskBoardContent;
+  propUuid?: string;
 };
 
-export const TaskBoardParent = ({ TaskBoardContent }: TaskBoardParentProps) => {
-  const { uuid } = useLocalSearchParams();
+export const TaskBoardParent = ({ TaskBoardContent, propUuid }: TaskBoardParentProps) => {
   const [isInvalidUUID, setIsInvalidUUID] = useState(false);
   const [columnRefs, setColumnRefs] = useState<ColumnRefs>({});
   const [taskEdit, setTaskEdit] = useState<false | Task>(false);
@@ -41,7 +41,9 @@ export const TaskBoardParent = ({ TaskBoardContent }: TaskBoardParentProps) => {
   const { getTaskBoard } = useTaskBoardStore();
   const { tasksFromBoard, saveTask } = useTaskStore();
 
-  // Validate UUID
+
+  const uuid = propUuid || useLocalSearchParams().uuid;
+
   useEffect(() => {
     try {
       parse(uuid as string);
@@ -84,17 +86,13 @@ export const TaskBoardParent = ({ TaskBoardContent }: TaskBoardParentProps) => {
     [saveTask]
   );
 
-  if (isInvalidUUID || !getTaskBoard(uuid as string)) {
-    return <Redirect href="./new" />;
-  }
 
   const tasks = tasksFromBoard(uuid as string);
   const taskBoard = getTaskBoard(uuid as string);
 
-  if (!taskBoard) {
+  if (isInvalidUUID || !taskBoard) {
     return <Redirect href="./new" />;
   }
-
   return (
     <TaskBoardContent
       uuid={uuid as string}

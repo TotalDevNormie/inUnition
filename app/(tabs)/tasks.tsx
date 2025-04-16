@@ -29,7 +29,7 @@ export default function tasks() {
   );
 
   return (
-    <View className="mx-8 mb-2 flex flex-1 flex-col overflow-hidden rounded-xl">
+    <View className="mb-2 flex flex-1 flex-col overflow-hidden rounded-xl">
       <View className="mb-4 flex flex-row items-center justify-between gap-4">
         <Text className="text-3xl text-text">Task Boards</Text>
         {Platform.OS == 'web' && <NewButton />}

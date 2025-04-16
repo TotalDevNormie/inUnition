@@ -54,9 +54,9 @@ export default function DraggableTask({
 
       if (!isLandscape) {
         const stateArray = Object.keys(columnRefs);
-        const stateIndex = stateArray.findIndex((key) => key === task.completionStatus);
+        const stateIndex = stateArray.findIndex((key) => key === task.status);
 
-      console.log(stateIndex)
+      console.log(stateArray)
 
 
         if (translateX.value < -taskMeasurements.width / 3) {

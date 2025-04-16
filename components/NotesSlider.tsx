@@ -32,7 +32,7 @@ export default function NotesSlider({ notes }: Props) {
             onPress={() => router.push(`/note/${note.uuid}`)}
             key={note.uuid}
             className={`bg-secondary-850 ${
-              note?.endsAt ? 'border-2 border-primary' : ''
+              note?.endsAt && moment(note.endsAt).isAfter(moment()) ? 'border-2 border-primary' : ''
             } flex w-60 flex-col gap-2 rounded-2xl p-4 `}>
             <View className="flex flex-row gap-2">
               <Text className="flex-1 text-xl text-text">
@@ -55,11 +55,10 @@ export default function NotesSlider({ notes }: Props) {
                 : note?.content}
             </Text>
             <View className="mt-auto">
-              {note?.endsAt ? (
+              {note?.endsAt && (
                 <Text className="text-primary">Due {moment(note.endsAt).fromNow()}</Text>
-              ) : (
-                <Text className="text-accent">Last edited {moment(note.updatedAt).fromNow()}</Text>
               )}
+                <Text className="text-accent">Last edited {moment(note.updatedAt).fromNow()}</Text>
             </View>
           </Pressable>
         )}

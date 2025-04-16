@@ -51,6 +51,7 @@ interface NoteState {
   saveNote: (note: Partial<Note>) => Promise<void>;
   deleteNote: (uuid: string) => Promise<void>;
   syncWithFirebase: () => Promise<void>;
+  notesWithTag: (tag: string) => Note[];
 }
 
 export const useNoteStore = create<NoteState>()(
@@ -85,6 +86,8 @@ export const useNoteStore = create<NoteState>()(
           Object.values(get().notes).filter(
             ({ state }) => state === "active"
           ),
+        notesWithTag: (tag: string) =>
+          Object.values(get().notes).filter((note) => note.tags?.includes(tag)),
 
         saveNote: async (note: Partial<Note>) => {
           if (!note.uuid) throw new Error("Note uuid is required");

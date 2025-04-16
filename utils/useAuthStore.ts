@@ -11,36 +11,14 @@ import {
   sendPasswordResetEmail,
   deleteUser,
 } from 'firebase/auth';
-import { useNoteStore } from './manageNotes';
-import { useTaskStore } from './manageTasks';
-import { useTaskBoardStore } from './manageTaskBoards';
 import { auth } from '../firebaseConfig';
+import { cleanUpData } from './cleanUpData';
 
-// Define the User type
 export type User = {
   uid: string;
   email: string | null;
   displayName: string | null;
   photoURL: string | null;
-  // Add any other user properties you need
-};
-
-const cleanUpData = () => {
-  useNoteStore.setState({
-    notes: {},
-    pendingChanges: {},
-    lastSyncTimestamp: 0,
-  });
-  useTaskStore.setState({
-    tasks: {},
-    pendingChanges: {},
-    lastSyncTimestamp: 0,
-  });
-  useTaskBoardStore.setState({
-    taskBoards: {},
-    pendingChanges: {},
-    lastSyncTimestamp: 0,
-  });
 };
 
 interface AuthState {

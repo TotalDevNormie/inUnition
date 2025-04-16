@@ -54,7 +54,7 @@ export default function TaskColumn({
 
   return (
     <Animated.View
-      className="flex flex-auto items-stretch portrait:w-full landscape:flex-1 gap-2 flex-col min-w-40"
+      className="flex flex-auto items-stretch portrait:w-full landscape:flex-1 gap-2 flex-col min-w-[20rem]"
       style={[animatedStyles]}
       ref={columnRef}
     >

@@ -68,4 +68,4 @@ const Sidebar = () => {
   );
 };
 
-const Hr = () => <View className="bg- h-[2px] w-full" />;
+export const Hr = () => <View className="bg-secondary h-[2px] w-full" />;

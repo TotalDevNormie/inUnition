@@ -14,7 +14,7 @@ export default function Tasks() {
   return <TaskBoardParent TaskBoardContent={TaskBoardContentMobile} />;
 }
 
-const TaskBoardContentMobile: TaskBoardContent = ({
+export const TaskBoardContentMobile: TaskBoardContent = ({
   uuid,
   taskEdit,
   setTaskEdit,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Pressable, Text, View, TextInput } from 'react-native';
 import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { TagsInput } from '../TagsInput';
@@ -22,6 +22,7 @@ export default function TaskBoardSettingsContent({
   const [tags, setTags] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState('');
   const { getTaskBoard, saveTaskBoard, deleteTaskBoard } = useTaskBoardStore();
+  const isInitial = useRef(true);
 
   // Load initial data
   useEffect(() => {
@@ -34,27 +35,17 @@ export default function TaskBoardSettingsContent({
     }
   }, [boardUuid, getTaskBoard]);
 
-  // Save board data when form values change
   useEffect(() => {
-    // Skip the initial render
-    if (!name) return;
-    
-    const saveData = async () => {
-      try {
-        await saveTaskBoard({
-          uuid: boardUuid,
-          name,
-          description,
-          tags,
-          endsAt: dueDate,
-        });
-      } catch (error) {
-        console.error('Failed to save board settings:', error);
-      }
-    };
-    
-    saveData();
-  }, [name, description, tags, dueDate, boardUuid, saveTaskBoard]);
+    if (isInitial.current) {
+      isInitial.current = false;
+      return;
+    }
+    saveTaskBoard({
+      uuid: boardUuid,
+      tags,
+      endsAt: dueDate,
+    });
+  }, [tags, dueDate, boardUuid, saveTaskBoard]);
 
   const handleDeleteBoard = async () => {
     try {
@@ -69,19 +60,28 @@ export default function TaskBoardSettingsContent({
     router.push('./new');
   };
 
+  const handleNameChange = () => {
+    saveTaskBoard({
+      uuid: boardUuid,
+      name,
+    });
+  }
+  const handleDescriptionChange = () => {
+    saveTaskBoard({
+      uuid: boardUuid,
+      description,
+    });
+  }
+
   const TextInputComponent = inBottomSheet ? BottomSheetTextInput : TextInput;
 
   return (
     <View className="flex flex-col gap-4 p-8 pb-10">
-      <View className="flex flex-row gap-2 mb-2">
-        <Pressable
-          onPress={handleDeleteBoard}
-          className="flex-1 rounded-xl bg-red-500 p-2">
+      <View className="mb-2 flex flex-row gap-2">
+        <Pressable onPress={handleDeleteBoard} className="flex-1 rounded-xl bg-red-500 p-2">
           <Text className="text-center text-text">Delete Task Board</Text>
         </Pressable>
-        <Pressable
-          onPress={handleNewBoard}
-          className="flex-1 rounded-xl bg-accent p-2">
+        <Pressable onPress={handleNewBoard} className="flex-1 rounded-xl bg-accent p-2">
           <Text className="text-center text-background">New Task Board</Text>
         </Pressable>
       </View>
@@ -90,6 +90,7 @@ export default function TaskBoardSettingsContent({
       <TextInputComponent
         value={name}
         onChangeText={setName}
+        onBlur={handleNameChange}
         className="rounded-xl bg-secondary-850 p-2 text-text"
       />
 
@@ -97,6 +98,7 @@ export default function TaskBoardSettingsContent({
       <TextInputComponent
         value={description}
         onChangeText={setDescription}
+        onBlur={handleDescriptionChange}
         className="rounded-xl bg-secondary-850 p-2 text-text"
       />
 

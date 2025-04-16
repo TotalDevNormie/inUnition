@@ -39,6 +39,7 @@ interface TaskBoardState {
   lastSyncTimestamp: number;
   activeTaskBoards: () => TaskBoard[];
   getTaskBoard: (uuid: string) => TaskBoard | null;
+  taskBoardsWithTag: (tag: string) => TaskBoard[];
   saveTaskBoard: (taskBoard: Partial<TaskBoard>) => Promise<void | string>;
   deleteTaskBoard: (uuid: string) => Promise<void>;
   deleteAllTaskBoards: (local: boolean) => Promise<void>;
@@ -69,6 +70,10 @@ export const useTaskBoardStore = create<TaskBoardState>()(
           (taskBoard) => taskBoard.status === 'active',
         ),
       getTaskBoard: (uuid) => get().taskBoards[uuid] || null,
+      taskBoardsWithTag: (tag: string) =>
+        Object.values(get().taskBoards).filter((taskBoard) =>
+          taskBoard.tags?.includes(tag),
+        ),
 
       saveTaskBoard: async (taskBoard) => {
         const uuid = taskBoard?.uuid || uuidv4();

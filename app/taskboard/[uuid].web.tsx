@@ -7,9 +7,11 @@ import TaskForm from '../../components/tasks/TaskForm';
 import TaskBoardSettings from '../../components/tasks/TaskBoardSettings';
 import Modal from '../../components/Modal';
 
-const WebTasks = () => <TaskBoardParent TaskBoardContent={TaskBoardContentWeb} />;
+export default function WebTasks() {
+  return <TaskBoardParent TaskBoardContent={TaskBoardContentWeb} />;
+}
 
-const TaskBoardContentWeb: TaskBoardContent = ({
+export const TaskBoardContentWeb: TaskBoardContent = ({
   uuid,
   taskEdit,
   setTaskEdit,
@@ -40,13 +42,12 @@ const TaskBoardContentWeb: TaskBoardContent = ({
     }
   };
   return (
-    <View className="mx-8 my-4 flex flex-col gap-8">
-      <View className="flex flex-row justify-between">
-        <Pressable onPress={() => router.back()}>
-          <Text className="text-text">
-            <AntDesign name="arrowleft" size={24} />
-          </Text>
-        </Pressable>
+    <View className=" my-4 flex flex-col gap-8">
+      <View className="flex flex-row justify-between ">
+        <View className="flex flex-1 flex-col gap-2">
+          <Text className="grow text-2xl text-text">{taskBoard.name}</Text>
+          <Text className="grow text-text">{taskBoard.description}</Text>
+        </View>
         <View className="flex flex-row gap-2">
           <Pressable
             className="p-2"
@@ -69,12 +70,8 @@ const TaskBoardContentWeb: TaskBoardContent = ({
           </Pressable>
         </View>
       </View>
-      <View className="flex flex-row items-center gap-2">
-        <Text className="grow text-2xl text-text">{taskBoard.name}</Text>
-        <Text className="grow text-text">{taskBoard.description}</Text>
-      </View>
-      <View className="flex flex-wrap gap-4">
-        {taskBoard.statusTypes?.map((status) => (
+      <View className="flex flex-wrap gap-2 portrait:flex-col landscape:flex-row">
+        {taskBoard.statusTypes?.map((status: string) => (
           <TaskColumn
             key={status}
             status={status}
@@ -107,5 +104,3 @@ const TaskBoardContentWeb: TaskBoardContent = ({
     </View>
   );
 };
-
-export default WebTasks;
