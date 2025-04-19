@@ -27,7 +27,7 @@ export default function NoteInput({ uuid }: { uuid: string }) {
   };
 
   return (
-    <ScrollView className="flex min-h-[40rem] grow flex-col gap-4 px-8 py-4">
+    <View className="flex grow flex-col gap-4 px-8 py-4">
       {note?.tags && <Text className='text-text'>Tags: <Text className="text-primary">{note.tags.join(', ')}</Text></Text>}
       <TextInput
         value={title}
@@ -53,7 +53,7 @@ export default function NoteInput({ uuid }: { uuid: string }) {
         placeholder="Content"
         placeholderTextColor="#888"
       />
-    </ScrollView>
+    </View>
   );
 }
 

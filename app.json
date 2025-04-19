@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "inUnition",
-    "slug": "inUnition",
+    "name": "InUnition",
+    "slug": "InUnition",
     "scheme": "inunition",
     "version": "1.0.0",
     "userInterfaceStyle": "light",
@@ -13,8 +13,7 @@
     "plugins": ["expo-router"],
     "experiments": {
       "typedRoutes": true,
-      "tsconfigPaths": true,
-      "turbomodules": true
+      "tsconfigPaths": true
     },
     "orientation": "portrait",
     "assetBundlePatterns": ["**/*"],

@@ -28,11 +28,7 @@ interface AuthState {
   error: string | null;
 
   login: (email: string, password: string) => Promise<void>;
-  register: (
-    email: string,
-    password: string,
-    displayName: string,
-  ) => Promise<void>;
+  register: (email: string, password: string, displayName: string) => Promise<void>;
   logout: () => Promise<void>;
   updateProfile: (data: Partial<User>) => Promise<void>;
   deleteAccount: () => Promise<void>;
@@ -83,8 +79,12 @@ export const useAuthStore = create<AuthState>()(
           });
           return unsubscribe;
         } catch (error: any) {
+          console.log('Error logging in:', error.code);
           set({
-            error: error.message,
+            error:
+              error.code === 'auth/invalid-credential'
+                ? 'Invalid email or password'
+                : "Couldn't log in",
             isLoading: false,
             isAuthenticated: false,
           });
@@ -94,11 +94,7 @@ export const useAuthStore = create<AuthState>()(
       login: async (email: string, password: string) => {
         set({ isLoading: true, error: null });
         try {
-          const userCredential = await signInWithEmailAndPassword(
-            auth,
-            email,
-            password,
-          );
+          const userCredential = await signInWithEmailAndPassword(auth, email, password);
           if (userCredential.user) {
             const user: User = {
               uid: userCredential.user.uid,
@@ -110,22 +106,21 @@ export const useAuthStore = create<AuthState>()(
             cleanUpData();
           }
         } catch (error: any) {
-          set({ error: error.message, isLoading: false });
+          console.log('Error logging in:', error.code);
+          set({
+            error:
+              error.code === 'auth/invalid-credential'
+                ? 'Invalid email or password'
+                : "Couldn't log in",
+            isLoading: false,
+          });
         }
       },
 
-      register: async (
-        email: string,
-        password: string,
-        displayName: string,
-      ) => {
+      register: async (email: string, password: string, displayName: string) => {
         set({ isLoading: true, error: null });
         try {
-          const userCredential = await createUserWithEmailAndPassword(
-            auth,
-            email,
-            password,
-          );
+          const userCredential = await createUserWithEmailAndPassword(auth, email, password);
           // Update profile with display name
           await firebaseUpdateProfile(userCredential.user, { displayName });
           const user: User = {
@@ -209,6 +204,6 @@ export const useAuthStore = create<AuthState>()(
         user: state.user,
         isAuthenticated: state.isAuthenticated,
       }),
-    },
-  ),
+    }
+  )
 );

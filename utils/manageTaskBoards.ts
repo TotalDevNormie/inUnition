@@ -4,16 +4,9 @@ import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { MMKV } from 'react-native-mmkv';
-import {
-  collection,
-  doc,
-  setDoc,
-  query,
-  where,
-  getDocs,
-  onSnapshot,
-} from 'firebase/firestore';
+import { collection, doc, setDoc, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { useAuthStore } from './useAuthStore';
+import { useTaskStore } from './manageTasks'; // Import the task store
 import { db } from '../firebaseConfig';
 
 const storage = new MMKV();
@@ -66,14 +59,10 @@ export const useTaskBoardStore = create<TaskBoardState>()(
       pendingChanges: {},
       lastSyncTimestamp: Date.now(),
       activeTaskBoards: () =>
-        Object.values(get().taskBoards).filter(
-          (taskBoard) => taskBoard.status === 'active',
-        ),
+        Object.values(get().taskBoards).filter((taskBoard) => taskBoard.status === 'active'),
       getTaskBoard: (uuid) => get().taskBoards[uuid] || null,
       taskBoardsWithTag: (tag: string) =>
-        Object.values(get().taskBoards).filter((taskBoard) =>
-          taskBoard.tags?.includes(tag),
-        ),
+        Object.values(get().taskBoards).filter((taskBoard) => taskBoard.tags?.includes(tag)),
 
       saveTaskBoard: async (taskBoard) => {
         const uuid = taskBoard?.uuid || uuidv4();
@@ -145,6 +134,12 @@ export const useTaskBoardStore = create<TaskBoardState>()(
           },
         });
 
+        const { tasksFromBoard, deleteTask } = useTaskStore.getState();
+        const tasksToDelete = tasksFromBoard(uuid);
+        for (const task of tasksToDelete) {
+          await deleteTask(task.uuid);
+        }
+
         const netInfo = await NetInfo.fetch();
         const authenticated = useAuthStore.getState().isAuthenticated;
         if (netInfo.isConnected && authenticated) {
@@ -183,16 +178,12 @@ export const useTaskBoardStore = create<TaskBoardState>()(
         const authenticated = useAuthStore.getState().isAuthenticated;
         const user = useAuthStore.getState().user;
         const netInfo = await NetInfo.fetch();
-        if (!netInfo.isConnected || !authenticated || !user || !user.uid)
-          return;
+        if (!netInfo.isConnected || !authenticated || !user || !user.uid) return;
 
         const { taskBoards, pendingChanges } = get();
         try {
           const boardsRef = collection(db, TASK_BOARDS);
-          const boardsQuery = query(
-            boardsRef,
-            where('userUid', '==', user.uid),
-          );
+          const boardsQuery = query(boardsRef, where('userUid', '==', user.uid));
           const querySnapshot = await getDocs(boardsQuery);
           const firebaseTaskBoards: { [key: string]: TaskBoard } = {};
 
@@ -202,9 +193,7 @@ export const useTaskBoardStore = create<TaskBoardState>()(
 
           const mergedTaskBoards = { ...taskBoards };
 
-          for (const [uuid, firebaseTaskBoard] of Object.entries(
-            firebaseTaskBoards,
-          )) {
+          for (const [uuid, firebaseTaskBoard] of Object.entries(firebaseTaskBoards)) {
             const localTaskBoard = taskBoards[uuid];
             if (!localTaskBoard) {
               mergedTaskBoards[uuid] = firebaseTaskBoard;
@@ -218,9 +207,7 @@ export const useTaskBoardStore = create<TaskBoardState>()(
             const mergedTaskBoard = { ...localTaskBoard };
             if (firebaseTaskBoard.updatedAt && localTaskBoard.updatedAt) {
               const localTime = new Date(localTaskBoard.updatedAt).getTime();
-              const remoteTime = new Date(
-                firebaseTaskBoard.updatedAt,
-              ).getTime();
+              const remoteTime = new Date(firebaseTaskBoard.updatedAt).getTime();
               if (remoteTime > localTime) {
                 Object.assign(mergedTaskBoard, firebaseTaskBoard);
               }
@@ -228,10 +215,8 @@ export const useTaskBoardStore = create<TaskBoardState>()(
               Object.assign(mergedTaskBoard, firebaseTaskBoard);
             }
             if (
-              (localTaskBoard.statusTypes &&
-                localTaskBoard.statusTypes.includes('deleted')) ||
-              (firebaseTaskBoard.statusTypes &&
-                firebaseTaskBoard.statusTypes.includes('deleted'))
+              (localTaskBoard.statusTypes && localTaskBoard.statusTypes.includes('deleted')) ||
+              (firebaseTaskBoard.statusTypes && firebaseTaskBoard.statusTypes.includes('deleted'))
             ) {
               mergedTaskBoard.statusTypes = ['deleted'];
             }
@@ -266,8 +251,8 @@ export const useTaskBoardStore = create<TaskBoardState>()(
     {
       name: 'task-board-storage',
       storage: createJSONStorage(() => zustandStorage),
-    },
-  ),
+    }
+  )
 );
 
 let unsubscribe: (() => void) | null = null;

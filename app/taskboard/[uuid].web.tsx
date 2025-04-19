@@ -41,6 +41,10 @@ export const TaskBoardContentWeb: TaskBoardContent = ({
       setOpenModal(false);
     }
   };
+
+  console.log('tasks', tasks);
+  console.log('task board statuses', taskBoard.statusTypes);
+
   return (
     <View className=" my-4 flex flex-col gap-8">
       <View className="flex flex-row justify-between ">
