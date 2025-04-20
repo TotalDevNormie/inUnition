@@ -10,10 +10,24 @@
       "output": "static",
       "favicon": "./assets/darkLogo.svg"
     },
-    "plugins": ["expo-router"],
+    "plugins": [
+      "expo-router",
+      [
+        "expo-build-properties",
+        {
+          "ios": {
+            "newArchEnabled": true
+          },
+          "android": {
+            "newArchEnabled": true
+          }
+        }
+      ]
+    ],
     "experiments": {
       "typedRoutes": true,
-      "tsconfigPaths": true
+      "tsconfigPaths": true,
+      "turboModules": true
     },
     "orientation": "portrait",
     "assetBundlePatterns": ["**/*"],

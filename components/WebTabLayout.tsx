@@ -13,7 +13,7 @@ import { router } from 'expo-router';
 export default function WebTabLayout() {
   // Use the Zustand store for collapsed state
   const { isCollapsed, toggleCollapsed, setCollapsed } = useSidebarStore();
-  
+
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
   const [isSidebarOpen, setIsSidebarOpen] = useState(!isMobile);
@@ -64,7 +64,7 @@ export default function WebTabLayout() {
         )}
 
         <ScrollView
-          className={`specific-issue flex-1 rounded-lg p-4 ${(!isMobile || !isSidebarOpen) ? "ml-4" : ""}`}
+          className={`specific-issue flex-1 rounded-lg p-4 ${!isMobile || !isSidebarOpen ? 'ml-4' : ''}`}
           contentContainerStyle={{ flexGrow: 1 }}>
           <Slot />
         </ScrollView>
@@ -161,7 +161,6 @@ const Sidebar = ({
 
         <Hr />
       </View>
-
       <View>
         {user && (
           <>

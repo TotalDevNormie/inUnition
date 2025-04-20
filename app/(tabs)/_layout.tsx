@@ -2,17 +2,18 @@ import { ScrollView, Text, View } from 'react-native';
 import { TabRouter } from '@react-navigation/native';
 import { Navigator, usePathname, Slot, Link } from 'expo-router';
 import NavLink from '../../components/NavLink';
-import { Feather, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { Feather, Ionicons, MaterialIcons, Octicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import DarkLogo from '../../assets/darkLogo.svg';
 import SearchButton from '../../components/SearchButton';
+import { useAuthStore } from '~/utils/useAuthStore';
 
 export default function TabsLayout() {
   return (
     <Navigator router={TabRouter}>
       <View className="bg-background">
         <SafeAreaView>
-          <View className="bg-background flex-col h-screen py-4 flex gap-2">
+          <View className="flex h-screen flex-col gap-2 bg-background py-4">
             <Header />
             <View className="flex-1 self-stretch rounded-lg">
               <Slot />
@@ -27,37 +28,51 @@ export default function TabsLayout() {
 
 const Bar = () => {
   const pathname = usePathname();
+  const { isLoading, user } = useAuthStore();
 
   return (
-    <View className="flex flex-row align-middle p-2 mx-4 rounded-xl justify-evenly bg-secondary-850">
-      <NavLink
-        href="/"
-        className={`flex flex-col justify-center bg-secondary rounded-xl`}
-        icon={<Ionicons name="home" size={32} />}
-        active={pathname === '/'}
-        mobile
-      ></NavLink>
+    <View className="mx-4 flex flex-row justify-evenly rounded-xl bg-secondary-850 p-2 align-middle">
+      <NavLink href="/" icon={<Ionicons name="home" size={24} />} active={pathname === '/'} mobile>
+        Home
+      </NavLink>
       <NavLink
         href="/notes"
-        className={`flex flex-col justify-center rounded-xl`}
-        icon={<Ionicons name="document-text" size={32} />}
+        icon={<Ionicons name="document-text" size={24} />}
         active={pathname === '/notes'}
-        mobile
-      ></NavLink>
+        mobile>
+        Notes
+      </NavLink>
       <NavLink
         href="/tasks"
-        className={`flex flex-col justify-center rounded-xl`}
-        icon={<MaterialIcons name="task-alt" size={32} />}
+        icon={<Octicons name="tasklist" size={24} />}
         active={pathname === '/tasks'}
-        mobile
-      ></NavLink>
+        mobile>
+        Tasks
+      </NavLink>
+      {user ? (
+        <NavLink
+          href="/user"
+          icon={<Feather name="user" size={24} />}
+          active={pathname === '/user'}
+          mobile>
+          Profile
+        </NavLink>
+      ) : (
+        <NavLink
+          href="/login"
+          icon={<Ionicons name="log-in-outline" size={24} />}
+          active={pathname === '/login'}
+          mobile>
+          Login
+        </NavLink>
+      )}
     </View>
   );
 };
 
 const Header = () => {
   return (
-    <View className="flex flex-row justify-between px-4 rounded-xl">
+    <View className="flex flex-row justify-between rounded-xl px-4">
       <View>
         <DarkLogo />
       </View>

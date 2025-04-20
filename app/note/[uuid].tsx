@@ -31,7 +31,7 @@ const NotePageContent: NotePage = ({ uuid }) => {
     if (index == -1) setSettingsOpen(false);
   }, []);
   return (
-    <View className="flex grow min-h-screen">
+    <View className="flex min-h-screen grow">
       <View className="flex flex-row justify-between px-8">
         <Pressable onPress={() => router.back()}>
           <Text className="text-text">
@@ -42,10 +42,7 @@ const NotePageContent: NotePage = ({ uuid }) => {
           <Pressable className="p-2">
             <Text className="text-text"></Text>
           </Pressable>
-          <Pressable
-            className="p-2"
-            onPress={() => setSettingsOpen(!settingsOpen)}
-          >
+          <Pressable className="p-2" onPress={() => setSettingsOpen(!settingsOpen)}>
             <Text className="text-text">
               <Ionicons name="settings" size={24} />
             </Text>
@@ -66,8 +63,7 @@ const NotePageContent: NotePage = ({ uuid }) => {
           borderTopColor: '#313749',
         }}
         handleIndicatorStyle={{ backgroundColor: '#313749' }}
-        backgroundStyle={{ backgroundColor: '#121517' }}
-      >
+        backgroundStyle={{ backgroundColor: '#121517' }}>
         <BottomSheetView>
           <NoteSettings uuid={uuid} />
         </BottomSheetView>
