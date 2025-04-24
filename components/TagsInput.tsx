@@ -1,8 +1,5 @@
 import { Entypo, Ionicons } from '@expo/vector-icons';
-import {
-  BottomSheetFlatList,
-  BottomSheetTextInput,
-} from '@gorhom/bottom-sheet';
+import { BottomSheetFlatList, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useState } from 'react';
 import { FlatList, Pressable, Text, TextInput, View } from 'react-native';
 
@@ -12,11 +9,7 @@ type TagsInputProps = {
   inBottomSheet?: boolean;
 };
 
-export const TagsInput = ({
-  tags,
-  setTags,
-  inBottomSheet = false,
-}: TagsInputProps) => {
+export const TagsInput = ({ tags, setTags, inBottomSheet = false }: TagsInputProps) => {
   const [newTag, setNewTag] = useState('');
 
   const handleAddTag = () => {
@@ -33,30 +26,27 @@ export const TagsInput = ({
   };
   return (
     <View className="flex gap-2">
-      <Text className="text-text">Tags</Text>
-      <View className="flex gap-2 flex-row bg-secondary-850 p-2 rounded-xl">
+      <Text className="text-text">Tags </Text>
+      <View className="flex flex-row gap-2 rounded-xl bg-secondary-850 p-2">
         <CorrectInput
           value={newTag}
           onChangeText={setNewTag}
-          className="text-text rounded-xl grow focus:outline-none"
+          className="grow rounded-xl text-text focus:outline-none"
           onSubmitEditing={handleAddTag}
           blurOnSubmit={false}
         />
-        <Pressable
-          className="text-text bg-primary p-2 rounded-xl self-end"
-          onPress={handleAddTag}
-        >
+        <Pressable className="self-end rounded-xl bg-primary p-2 text-text" onPress={handleAddTag}>
           <Entypo name="plus" size={18} className="text-background" />
         </Pressable>
       </View>
       <FlatList
         data={tags}
         renderItem={({ item: tag }) => (
-          <View className="bg-secondary-850 flex flex-row gap-1 py-2 px-4 rounded-xl items-center mr-2">
+          <View className="mr-2 flex flex-row items-center gap-1 rounded-xl bg-secondary-850 px-4 py-2">
             <Text className="text-text">{tag} </Text>
             <Pressable onPress={() => handleRemoveTag(tag)}>
               <Text className="text-text">
-                <Ionicons name="close" size={18} />
+                <Ionicons name="close" size={18} />{' '}
               </Text>
             </Pressable>
           </View>

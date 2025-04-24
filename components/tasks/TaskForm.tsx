@@ -58,7 +58,7 @@ export default function TaskFormContent({
           endsAt: taskDueDate,
         });
       }
-      
+
       // Reset form and notify parent
       setTaskName('');
       setTaskDescription('');
@@ -70,10 +70,10 @@ export default function TaskFormContent({
       // Handle error state (could add error state and display)
     }
   };
-  
+
   const handleDelete = async () => {
     if (!taskEdit) return;
-    
+
     try {
       await deleteTask(taskEdit.uuid);
       onComplete();
@@ -90,20 +90,18 @@ export default function TaskFormContent({
     <View className="flex flex-col gap-4 p-8 pb-10">
       <ScrollViewComponent>
         {taskEdit && (
-          <Pressable
-            onPress={handleDelete}
-            className="flex-1 rounded-xl bg-red-500 p-2 mb-4">
-            <Text className="text-center text-text">Delete Task</Text>
+          <Pressable onPress={handleDelete} className="mb-4 flex-1 rounded-xl bg-red-500 p-2">
+            <Text className="text-center text-text">Delete Task </Text>
           </Pressable>
         )}
-        <Text className="mb-2 text-text">Task name:</Text>
+        <Text className="mb-2 text-text">Task name: </Text>
         <TextInputComponent
           value={taskName}
           onChangeText={setTaskName}
           className="rounded-xl bg-secondary-850 p-2 text-text"
           onSubmitEditing={handleSubmit}
         />
-        <Text className="mb-2 mt-4 text-text">Task description:</Text>
+        <Text className="mb-2 mt-4 text-text">Task description: </Text>
         <TextInputComponent
           value={taskDescription}
           onChangeText={setTaskDescription}
@@ -113,11 +111,9 @@ export default function TaskFormContent({
         <TagsInput tags={taskTags} setTags={setTaskTags} inBottomSheet={inBottomSheet} />
         <DueDateInput date={taskDueDate} setDate={setTaskDueDate} />
       </ScrollViewComponent>
-      <Pressable
-        className="rounded-xl bg-primary p-2 mt-4"
-        onPress={handleSubmit}>
+      <Pressable className="mt-4 rounded-xl bg-primary p-2" onPress={handleSubmit}>
         <Text className="text-center text-background">
-          {taskEdit ? 'Save Changes' : 'Add Task'}
+          {taskEdit ? 'Save Changes' : 'Add Task'}{' '}
         </Text>
       </Pressable>
     </View>

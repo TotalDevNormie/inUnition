@@ -50,7 +50,7 @@ const ListItem = ({
   return (
     <View className="mb-2 flex flex-row gap-2 rounded-xl bg-secondary-850 p-2">
       <Text className="text-text" {...dragHandleProps}>
-        <MaterialIcons name="drag-indicator" size={24} />
+        <MaterialIcons name="drag-indicator" size={24} />{' '}
       </Text>
       {editing === item ? (
         <TextInput
@@ -61,13 +61,18 @@ const ListItem = ({
           onChangeText={(text) => handleEditingStatusChange(text)}
         />
       ) : (
-        <Text className="grow py-1 text-center text-text">{item}</Text>
+        <Text className="grow py-1 text-center text-text">{item} </Text>
       )}
       <Pressable onPress={() => handleEditing(item)} className="p-1">
-        <Feather name={editing === item ? 'check' : 'edit-2'} size={20} className="text-primary" />
+        <Feather
+          name={editing === item ? 'check' : 'edit-2'}
+          color="#fff"
+          size={20}
+          className="text-primary"
+        />
       </Pressable>
       <Pressable onPress={() => deleteStatus(item)} className="p-1">
-        <Feather name="trash-2" size={20} className="text-red-500" />
+        <Feather name="trash-2" size={20} color="#fff" className="text-red-500" />
       </Pressable>
     </View>
   );
@@ -86,7 +91,7 @@ const Tab = ({
   <Pressable
     onPress={onPress}
     className={`rounded-t-lg px-4 py-2 ${active ? 'bg-secondary-850' : 'bg-secondary/30'}`}>
-    <Text className={`${active ? 'text-primary' : 'text-text'} font-medium`}>{title}</Text>
+    <Text className={`${active ? 'text-primary' : 'text-text'} font-medium`}>{title} </Text>
   </Pressable>
 );
 
@@ -124,13 +129,13 @@ export default function User() {
   // Show custom alert modal
   const showAlert = (title: string, message: string, actions?: React.ReactNode) => {
     setModalTitle(title);
-    setModalContent(<Text className="p-4 text-text">{message}</Text>);
+    setModalContent(<Text className="p-4 text-text">{message} </Text>);
     setModalActions(
       actions || (
         <Pressable
           onPress={() => setModalOpen(false)}
           className="border-t border-secondary-850 p-4">
-          <Text className="text-center font-medium text-primary">OK</Text>
+          <Text className="text-center font-medium text-primary">OK </Text>
         </Pressable>
       )
     );
@@ -174,7 +179,7 @@ export default function User() {
           <Pressable
             onPress={() => setModalOpen(false)}
             className="flex-1 border-r border-secondary-850 p-4">
-            <Text className="text-center font-medium text-text">Cancel</Text>
+            <Text className="text-center font-medium text-text">Cancel </Text>
           </Pressable>
           <Pressable
             onPress={async () => {
@@ -187,7 +192,7 @@ export default function User() {
               }
             }}
             className="flex-1 p-4">
-            <Text className="text-center font-medium text-red-500">Delete</Text>
+            <Text className="text-center font-medium text-red-500">Delete </Text>
           </Pressable>
         </View>
       );
@@ -275,7 +280,7 @@ export default function User() {
   if (isLoading) {
     return (
       <View className="flex flex-1 items-center justify-center">
-        <Text className="text-lg text-text">Loading...</Text>
+        <Text className="text-lg text-text">Loading... </Text>
       </View>
     );
   }
@@ -283,11 +288,11 @@ export default function User() {
   if (!user) {
     return (
       <View className="flex flex-1 items-center justify-center p-4">
-        <Text className="mb-4 text-xl text-text">Please log in to view your profile</Text>
+        <Text className="mb-4 text-xl text-text">Please log in to view your profile </Text>
         <Pressable
           onPress={() => router.push('/login')}
           className="rounded-lg bg-primary px-6 py-3">
-          <Text className="font-medium text-white">Log In</Text>
+          <Text className="font-medium text-text">Log In </Text>
         </Pressable>
       </View>
     );
@@ -301,12 +306,12 @@ export default function User() {
           <View className="mb-8 flex flex-row items-center">
             <View className="mr-4 flex h-20 w-20 items-center justify-center rounded-full bg-primary/20">
               <Text className="text-3xl font-bold text-primary">
-                {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
+                {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}{' '}
               </Text>
             </View>
             <View className="flex-1">
-              <Text className="text-2xl font-bold text-text">{user.displayName}</Text>
-              <Text className="text-text/70">{user.email}</Text>
+              <Text className="text-2xl font-bold text-text">{user.displayName} </Text>
+              <Text className="text-text/70">{user.email} </Text>
             </View>
           </View>
 
@@ -330,32 +335,33 @@ export default function User() {
             {activeTab === 'profile' && (
               <View className="flex flex-col gap-6">
                 <View className="mb-4 flex flex-row items-center justify-between">
-                  <Text className="text-xl font-medium text-text">Profile Information</Text>
+                  <Text className="text-xl font-medium text-text">Profile Information </Text>
                   <Pressable
                     onPress={() => setIsEditing(!isEditing)}
                     className="flex flex-row items-center">
                     <Feather
                       name={isEditing ? 'x' : 'edit-2'}
                       size={18}
+                      color="#fff"
                       className={isEditing ? 'text-red-500' : 'text-primary'}
                     />
                     <Text className={`ml-2 ${isEditing ? 'text-red-500' : 'text-primary'}`}>
-                      {isEditing ? 'Cancel' : 'Edit'}
+                      {isEditing ? 'Cancel ' : 'Edit '}{' '}
                     </Text>
                   </Pressable>
                 </View>
 
                 {error && (
                   <View className="mb-4 rounded-lg bg-red-500/10 p-3">
-                    <Text className="text-red-500">{error}</Text>
+                    <Text className="text-red-500">{error} </Text>
                     <Pressable onPress={clearError} className="mt-1">
-                      <Text className="text-red-500 underline">Dismiss</Text>
+                      <Text className="text-red-500 underline">Dismiss </Text>
                     </Pressable>
                   </View>
                 )}
 
                 <View className="flex flex-col gap-2">
-                  <Text className="font-medium text-text">Display Name</Text>
+                  <Text className="font-medium text-text">Display Name </Text>
                   <TextInput
                     className={`rounded-lg border p-3 text-text ${
                       isEditing ? 'border-primary/50 bg-secondary/30' : 'border-secondary'
@@ -367,7 +373,7 @@ export default function User() {
                 </View>
 
                 <View className="flex flex-col gap-2">
-                  <Text className="font-medium text-text">Email</Text>
+                  <Text className="font-medium text-text">Email </Text>
                   <TextInput
                     className={`rounded-lg border p-3 text-text ${
                       isEditing ? 'border-primary/50 bg-secondary/30' : 'border-secondary'
@@ -383,25 +389,30 @@ export default function User() {
                   <Pressable
                     onPress={handleUpdateProfile}
                     className="mt-4 rounded-lg bg-primary py-3">
-                    <Text className="text-center font-medium text-white">Save Changes</Text>
+                    <Text className="text-center font-medium text-white">Save Changes </Text>
                   </Pressable>
                 )}
 
                 <View className="mt-6 border-t border-secondary pt-6">
-                  <Text className="mb-4 text-xl font-medium text-text">Account Actions</Text>
+                  <Text className="mb-4 text-xl font-medium text-text">Account Actions </Text>
 
                   <Pressable
                     onPress={() => router.push('/logout')}
                     className="mb-3 flex flex-row items-center rounded-lg bg-secondary/30 px-4 py-3">
-                    <Ionicons name="log-out-outline" size={20} className="mr-3 text-text" />
-                    <Text className="text-text">Log Out</Text>
+                    <Ionicons
+                      name="log-out-outline"
+                      size={20}
+                      color="#fff"
+                      className="mr-3 text-text"
+                    />
+                    <Text className="text-text">Log Out </Text>
                   </Pressable>
 
                   <Pressable
                     onPress={handleDeleteAccount}
                     className="flex flex-row items-center rounded-lg bg-red-500/10 px-4 py-3">
-                    <Feather name="trash-2" size={20} className="mr-3 text-red-500" />
-                    <Text className="text-red-500">Delete Account</Text>
+                    <Feather name="trash-2" color="#fff" size={20} className="mr-3 text-red-500" />
+                    <Text className="text-red-500">Delete Account </Text>
                   </Pressable>
                 </View>
               </View>
@@ -410,13 +421,13 @@ export default function User() {
             {/* Preferences Tab */}
             {activeTab === 'preferences' && (
               <View className="flex flex-col gap-6">
-                <Text className="mb-2 text-xl font-medium text-text">Application Preferences</Text>
+                <Text className="mb-2 text-xl font-medium text-text">Application Preferences </Text>
 
                 {/* Default Completion Statuses */}
                 <View className="mt-2 flex flex-col gap-4">
-                  <Text className="font-medium text-text">Default Completion Statuses</Text>
+                  <Text className="font-medium text-text">Default Completion Statuses </Text>
                   <Text className="mb-2 text-text/70">
-                    These statuses will be used as defaults when creating new task boards.
+                    These statuses will be used as defaults when creating new task boards.{' '}
                   </Text>
 
                   <View className="mb-4 flex flex-row gap-2">
@@ -430,7 +441,7 @@ export default function User() {
                     <Pressable
                       className="flex items-center justify-center rounded-lg bg-primary px-4 py-2"
                       onPress={handleNewStatus}>
-                      <Text className="text-white">Add</Text>
+                      <Text className="text-white">Add </Text>
                     </Pressable>
                   </View>
 
@@ -484,7 +495,7 @@ export default function User() {
                     onPress={saveDefaultStatusTypes}
                     className="rounded-lg bg-primary py-3">
                     <Text className="text-center font-medium text-white">
-                      Save Default Statuses
+                      Save Default Statuses{' '}
                     </Text>
                   </Pressable>
                 </View>

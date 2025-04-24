@@ -31,7 +31,7 @@ export default function DueDateInput({ date, setDate }) {
       setDate(moment(date).hours(hours).minutes(minutes).toISOString());
       setVisible(false);
     },
-    [setVisible, date, setDate],
+    [setVisible, date, setDate]
   );
 
   const onDateConfirm = useCallback(
@@ -41,52 +41,43 @@ export default function DueDateInput({ date, setDate }) {
       setDate(moment(params.date).hours(0).minutes(0).toISOString());
       setVisibleDate(false);
     },
-    [setVisibleDate, setDate, setInputHours, setInputMinutes],
+    [setVisibleDate, setDate, setInputHours, setInputMinutes]
   );
 
   return (
     <View className="flex flex-col gap-4">
-      <Text className="text-text">Due date</Text>
+      <Text className="text-text">Due date </Text>
       <Pressable onPress={() => setVisibleDate(true)}>
-        <View className="flex flex-row justify-between p-4 bg-secondary-850 rounded-xl">
+        <View className="flex flex-row justify-between rounded-xl bg-secondary-850 p-4">
           {date ? (
-            <Text className="text-text grow">
-              {moment(date).format('DD.MM.YYYY')}
-            </Text>
+            <Text className="grow text-text">{moment(date).format('DD.MM.YYYY')} </Text>
           ) : (
-            <Text className="text-text grow">Press to select date </Text>
+            <Text className="grow text-text">Press to select date </Text>
           )}
           <Text className="text-text">
-            <AntDesign name="calendar" size={24} />
+            <AntDesign name="calendar" size={24} />{' '}
           </Text>
         </View>
       </Pressable>
 
-      <Text className="text-text">Due time</Text>
+      <Text className="text-text">Due time </Text>
       <Pressable onPress={() => setVisible(true)}>
-        <View className="flex flex-row justify-between p-4 bg-secondary-850 rounded-xl">
-          {typeof inputHours !== 'undefined' ||
-          typeof inputMinutes !== 'undefined' ? (
-            <Text className="text-text grow">
-              {String(inputHours)?.length === 1 ? '0' + inputHours : inputHours}
-              :
-              {String(inputMinutes)?.length === 1
-                ? '0' + inputMinutes
-                : inputMinutes}
+        <View className="flex flex-row justify-between rounded-xl bg-secondary-850 p-4">
+          {typeof inputHours !== 'undefined' || typeof inputMinutes !== 'undefined' ? (
+            <Text className="grow text-text">
+              {String(inputHours)?.length === 1 ? '0' + inputHours : inputHours}:
+              {String(inputMinutes)?.length === 1 ? '0' + inputMinutes : inputMinutes}{' '}
             </Text>
           ) : (
-            <Text className="text-text grow">Press to select time </Text>
+            <Text className="grow text-text">Press to select time </Text>
           )}
           <Text className="text-text">
-            <AntDesign name="clockcircleo" size={24} />
+            <AntDesign name="clockcircleo" size={24} />{' '}
           </Text>
         </View>
       </Pressable>
-      <Pressable
-        onPress={() => setDate('')}
-        className="bg-accent p-2 rounded-xl"
-      >
-        <Text className="text-center text-background">Clear due date</Text>
+      <Pressable onPress={() => setDate('')} className="rounded-xl bg-accent p-2">
+        <Text className="text-center text-background">Clear due date </Text>
       </Pressable>
       <TimePickerModal
         visible={visible}

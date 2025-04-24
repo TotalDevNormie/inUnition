@@ -49,8 +49,8 @@ export const TaskBoardContentWeb: TaskBoardContent = ({
     <View className=" my-4 flex flex-col gap-8">
       <View className="flex flex-row justify-between ">
         <View className="flex flex-1 flex-col gap-2">
-          <Text className="grow text-2xl text-text">{taskBoard.name}</Text>
-          <Text className="grow text-text">{taskBoard.description}</Text>
+          <Text className="grow text-2xl text-text">{taskBoard.name} </Text>
+          <Text className="grow text-text">{taskBoard.description} </Text>
         </View>
         <View className="flex flex-row gap-2">
           <Pressable
@@ -60,7 +60,7 @@ export const TaskBoardContentWeb: TaskBoardContent = ({
               setTaskEdit(false);
             }}>
             <Text className="text-text">
-              <MaterialIcons name="add-task" size={24} />
+              <MaterialIcons name="add-task" size={24} />{' '}
             </Text>
           </Pressable>
           <Pressable
@@ -69,7 +69,7 @@ export const TaskBoardContentWeb: TaskBoardContent = ({
               setOpenModal('settings');
             }}>
             <Text className="text-text">
-              <Ionicons name="settings" size={24} />
+              <Ionicons name="settings" size={24} />{' '}
             </Text>
           </Pressable>
         </View>

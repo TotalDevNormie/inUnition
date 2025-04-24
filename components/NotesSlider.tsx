@@ -38,27 +38,23 @@ export default function NotesSlider({ notes }: Props) {
               <Text className="flex-1 text-xl text-text">
                 {note?.title && note?.title?.length > 30
                   ? note?.title.slice(0, 27) + '...'
-                  : note?.title}
+                  : note?.title}{' '}
               </Text>
               <Text className="color-text ">
-                <FontAwesome5 name="edit" size={24} />
+                <FontAwesome5 name="edit" size={24} />{' '}
               </Text>
             </View>
-            {note?.tags && (
-              <Text className="text-primary">
-                {note.tags.join(', ')}
-              </Text>
-            )}
+            {note?.tags && <Text className="text-primary">{note.tags.join(', ')} </Text>}
             <Text className="max-h-36 overflow-hidden text-text">
               {note?.content && note?.content?.length > 100
                 ? note?.content.slice(0, 97) + '...'
-                : note?.content}
+                : note?.content}{' '}
             </Text>
             <View className="mt-auto">
               {note?.endsAt && (
-                <Text className="text-primary">Due {moment(note.endsAt).fromNow()}</Text>
+                <Text className="text-primary">Due {moment(note.endsAt).fromNow()} </Text>
               )}
-                <Text className="text-accent">Last edited {moment(note.updatedAt).fromNow()}</Text>
+              <Text className="text-accent">Last edited {moment(note.updatedAt).fromNow()} </Text>
             </View>
           </Pressable>
         )}

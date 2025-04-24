@@ -1,5 +1,3 @@
-import { useQuery } from '@tanstack/react-query';
-import { getTaskGroups, TaskGroup } from '../../utils/manageTasks';
 import MasonryList from 'reanimated-masonry-list';
 import { Dimensions, Platform, Pressable, View } from 'react-native';
 import { Text } from 'react-native';
@@ -8,8 +6,6 @@ import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import moment from 'moment';
 import { useTaskBoardStore } from '../../utils/manageTaskBoards';
 import { TaskBoard } from '../../utils/manageTaskBoards';
-
-type TaskGroupWithUUID = TaskGroup & { uuid: string };
 
 export default function tasks() {
   const windowWidth = Dimensions.get('window').width;
@@ -29,18 +25,18 @@ export default function tasks() {
   );
 
   return (
-    <View className="mb-2 flex flex-1 flex-col overflow-hidden rounded-xl">
+    <View className={`mb-2 flex flex-1 flex-col overflow-hidden rounded-xl px-4`}>
       <View className="mb-4 flex flex-row items-center justify-between gap-4">
-        <Text className="text-3xl text-text">Task Boards</Text>
+        <Text className="text-3xl text-text">Task Boards </Text>
         {Platform.OS == 'web' && <NewButton />}
       </View>
-      <Text className="mb-4 text-3xl text-text"></Text>
+      <Text className="mb-4 text-3xl text-text"> </Text>
       <View className="borer-2 flex-1 overflow-hidden rounded-xl border-primary">
         <MasonryList
           data={activeTaskBoards()}
           renderItem={({ item }) => <TaskGroupCard taskGroup={item as TaskBoard} />}
           numColumns={columnCount}
-          ListEmptyComponent={<Text className="py-10 text-center text-text">No task boards</Text>}
+          ListEmptyComponent={<Text className="py-10 text-center text-text">No task boards </Text>}
           keyExtractor={({ item }: { item: TaskBoard }): string => item?.uuid}
           style={{ gap: 16 }}
         />
@@ -54,17 +50,17 @@ export default function tasks() {
   );
 }
 
-const TaskGroupCard = ({ taskGroup }: { taskGroup: TaskGroupWithUUID }) => {
+const TaskGroupCard = ({ taskGroup }: { taskGroup: TaskBoard }) => {
   return (
     <Pressable onPress={() => router.push(`/taskboard/${taskGroup.uuid}`)} key={taskGroup.uuid}>
       <View className={`mt-4 flex flex-col gap-4 rounded-2xl bg-secondary-850 p-4`}>
-        {taskGroup?.name && <Text className="text-xl text-text">{taskGroup?.name}</Text>}
-        {taskGroup?.description && <Text className="text-text ">{taskGroup.description}</Text>}
+        {taskGroup?.name && <Text className="text-xl text-text">{taskGroup?.name} </Text>}
+        {taskGroup?.description && <Text className="text-text ">{taskGroup.description} </Text>}
         <View>
-          <Text className="text-text">{moment(taskGroup?.created_at).format('DD.MM.YYYY')}</Text>
-          <Text className="text-accent">Last edited {moment(taskGroup.updated_at).fromNow()}</Text>
-          {taskGroup?.ends_at && (
-            <Text className="text-primary">Due {moment(taskGroup.ends_at).fromNow()}</Text>
+          <Text className="text-text">{moment(taskGroup?.createdAt).format('DD.MM.YYYY')} </Text>
+          <Text className="text-accent">Last edited {moment(taskGroup.updatedAt).fromNow()} </Text>
+          {taskGroup?.endsAt && (
+            <Text className="text-primary">Due {moment(taskGroup.endsAt).fromNow()} </Text>
           )}
         </View>
       </View>

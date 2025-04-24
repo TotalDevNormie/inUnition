@@ -1,4 +1,4 @@
-import WebTabLayout from "~/components/WebTabLayout";
+import WebTabLayout from '~/components/WebTabLayout';
 
 export default function WebCluserLayout() {
   return <WebTabLayout />;

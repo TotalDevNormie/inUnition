@@ -54,14 +54,11 @@ export default function TaskColumn({
 
   return (
     <Animated.View
-      className="flex flex-auto items-stretch portrait:w-full landscape:flex-1 gap-2 flex-col min-w-[20rem]"
+      className="flex min-w-[20rem] flex-auto flex-col items-stretch gap-2 portrait:w-full landscape:flex-1"
       style={[animatedStyles]}
-      ref={columnRef}
-    >
-      <Text className="text-lg text-text text-center font-semibold">
-        {status}
-      </Text>
-      <View className="bg-secondary-850 p-2 flex flex-col gap-2 rounded-xl min-h-[3rem]">
+      ref={columnRef}>
+      <Text className="text-center text-lg font-semibold text-text">{status} </Text>
+      <View className="flex min-h-[3rem] flex-col gap-2 rounded-xl bg-secondary-850 p-2">
         {tasks?.map((task) => (
           <DraggableTask
             key={task?.uuid}

@@ -19,12 +19,12 @@ export default function Modal({ children, open, setOpen, title }: Props) {
       <Pressable
         className="flex-1 items-center justify-center bg-background-950/50"
         onPress={() => setOpen(false)}>
-        <Pressable 
-          className="w-[90%] max-w-[600px] bg-background rounded-xl overflow-hidden"
+        <Pressable
+          className="w-[90%] max-w-[600px] overflow-hidden rounded-xl bg-background"
           onPress={(e) => e.stopPropagation()}>
           {title && (
-            <View className="flex-row justify-between items-center p-4 border-b border-secondary-850">
-              <Text className="text-lg font-semibold text-text">{title}</Text>
+            <View className="flex-row items-center justify-between border-b border-secondary-850 p-4">
+              <Text className="text-lg font-semibold text-text">{title} </Text>
               <Pressable onPress={() => setOpen(false)}>
                 <AntDesign name="close" size={24} color="#fff" />
               </Pressable>

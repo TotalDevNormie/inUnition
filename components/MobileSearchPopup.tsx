@@ -1,4 +1,3 @@
-// components/MobileSearchPopup.tsx
 import React, { useEffect, useRef } from 'react';
 import {
   View,
@@ -11,123 +10,182 @@ import {
   Animated,
   Dimensions,
   SafeAreaView,
+  ActivityIndicator,
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useSearch } from '../utils/SearchContext';
+import { useSearchStore, SearchItem, SearchItemType } from '../utils/useSearchStore';
 import { router } from 'expo-router';
 import moment from 'moment';
+
+// Process search results for display
+type ProcessedResult = {
+  type: SearchItemType;
+  item: SearchItem;
+  matches: { text: string }[];
+};
 
 interface MobileSearchPopupProps {
   visible: boolean;
   setVisible: (visible: boolean) => void;
 }
 
-export default function MobileSearchPopup({
-  visible,
-  setVisible,
-}: MobileSearchPopupProps) {
-  const { query, setQuery, results, isSearching } = useSearch();
+export default function MobileSearchPopup({ visible, setVisible }: MobileSearchPopupProps) {
+  // Use the new SearchStore
+  const {
+    searchTerm,
+    setSearchTerm,
+    searchResults,
+    search,
+    selectedTypes,
+    selectedTags,
+    dueDateFilter,
+  } = useSearchStore();
 
   const inputRef = useRef<TextInput>(null);
   const slideAnim = useRef(new Animated.Value(0)).current;
+  const [isSearching, setIsSearching] = React.useState(false);
 
-  // Focus input when modal opens
+  // Process search results to match the expected format
+  const processedResults: ProcessedResult[] = React.useMemo(() => {
+    return searchResults.map((item) => {
+      // Create match objects
+      const matches = [];
+
+      if (item.content) {
+        matches.push({
+          text: item.content.substring(0, 150) + (item.content.length > 150 ? '...' : ''),
+        });
+      } else if (item.description) {
+        matches.push({
+          text: item.description.substring(0, 150) + (item.description.length > 150 ? '...' : ''),
+        });
+      } else {
+        matches.push({ text: '' });
+      }
+
+      return {
+        type: item.type,
+        item,
+        matches,
+      };
+    });
+  }, [searchResults]);
+
+  // Focus input and animate when modal opens/closes
   useEffect(() => {
     if (visible) {
       // Animate slide in
       Animated.timing(slideAnim, {
         toValue: 1,
-        duration: 300,
+        duration: 250,
         useNativeDriver: true,
       }).start();
 
-      // Focus the input
-      setTimeout(() => {
+      // Focus the input after a short delay for animation
+      const focusTimer = setTimeout(() => {
         inputRef.current?.focus();
       }, 100);
+      return () => clearTimeout(focusTimer);
     } else {
       // Animate slide out
       Animated.timing(slideAnim, {
         toValue: 0,
         duration: 200,
         useNativeDriver: true,
-      }).start();
-
-      // Clear the query when closing
-      setQuery('');
+      }).start(() => {
+        // Clear the search term *after* the animation completes
+        setSearchTerm('');
+      });
     }
-  }, [visible]);
+  }, [visible, slideAnim, setSearchTerm]);
 
-  const navigateToItem = (type: string, item: any) => {
-    setVisible(false);
+  // Perform search when search term changes
+  useEffect(() => {
+    setIsSearching(true);
+    const debounce = setTimeout(() => {
+      search();
+      setIsSearching(false);
+    }, 300);
+    return () => clearTimeout(debounce);
+  }, [searchTerm, search, selectedTypes, selectedTags, dueDateFilter]);
 
-    switch (type) {
-      case 'note':
-        router.push(`/note/${item.uuid}`);
-        break;
-      case 'task':
-        // Navigate to the parent task board
-        router.push(`/taskboard/${item.taskBoardUUID}`);
-        break;
-      case 'board':
-        router.push(`/taskboard/${item.uuid}`);
-        break;
+  // --- Navigation ---
+  const navigateToItem = (item: SearchItem) => {
+    setVisible(false); // Close modal first
+
+    if (item.type === 'note') {
+      router.push(`/note/${item.uuid}`);
+    } else if (item.type === 'task') {
+      router.push(`/taskboard/${item.uuid.split('-')[0]}?taskId=${item.uuid}`);
+    } else if (item.type === 'taskBoard') {
+      router.push(`/taskboard/${item.uuid}`);
+    } else {
+      console.warn('Could not determine item type for navigation:', item);
     }
   };
 
+  // --- Submit Search (Navigate to Full Search Screen) ---
   const handleSubmitSearch = () => {
-    if (query.trim()) {
-      setVisible(false);
+    if (searchTerm.trim()) {
+      setVisible(false); // Close the popup
+      // Navigate to the main search screen with the current query
       router.push({
         pathname: '/search',
-        params: { q: query },
+        params: { q: searchTerm },
       });
     }
   };
 
-  const getIcon = (type: string) => {
+  // --- Rendering Helpers ---
+  const getIcon = (type: SearchItemType): string => {
     switch (type) {
       case 'note':
         return 'sticky-note';
       case 'task':
         return 'tasks';
-      case 'board':
+      case 'taskBoard':
         return 'clipboard-list';
+      default:
+        return 'file';
     }
   };
 
-  const renderItem = ({ item }) => {
+  const renderItem = ({ item }: { item: ProcessedResult }) => {
     const { type, item: data, matches } = item;
+    const title = data.title || data.name || 'Untitled';
+    const updatedAt = data.updatedAt || data.createdAt || new Date().toISOString();
+    const displayType =
+      type === 'taskBoard' ? 'Board' : type.charAt(0).toUpperCase() + type.slice(1);
 
     return (
-      <Pressable
-        onPress={() => navigateToItem(type, data)}
-        className="py-3 px-4 border-b border-secondary-800"
-      >
+      <Pressable onPress={() => navigateToItem(data)} className="border-border border-b px-4 py-3">
         <View className="flex-row items-center">
-          <View className="w-10 h-10 rounded-full bg-primary items-center justify-center mr-3">
-            <FontAwesome5 name={getIcon(type)} size={18} color="#fff" />
+          {/* Icon */}
+          <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-primary">
+            <FontAwesome5 name={getIcon(type)} size={16} color="#fff" />
           </View>
+          {/* Text Content */}
           <View className="flex-1">
-            <Text className="text-lg text-text font-semibold" numberOfLines={1}>
-              {data.title || data.name || 'Untitled'}
+            <Text className="font-medium text-text text-text" numberOfLines={1}>
+              {title}{' '}
             </Text>
-            <Text className="text-text-secondary text-sm" numberOfLines={1}>
-              {type.charAt(0).toUpperCase() + type.slice(1)} •{' '}
-              {moment(data.updatedAt).fromNow()}
+            <Text className="mt-0.5 text-xs text-accent" numberOfLines={1}>
+              {displayType} • Updated {moment(updatedAt).fromNow()}{' '}
             </Text>
           </View>
         </View>
 
-        {matches.length > 0 && (
-          <Text className="text-text mt-2 ml-13" numberOfLines={2}>
-            {matches[0].text}
+        {/* Match Text */}
+        {matches.length > 0 && matches[0].text && (
+          <Text className="ml-12 mt-1.5 text-sm text-text" numberOfLines={2}>
+            {matches[0].text}{' '}
           </Text>
         )}
       </Pressable>
     );
   };
 
+  // --- Animation Setup ---
   const { height } = Dimensions.get('window');
   const translateY = slideAnim.interpolate({
     inputRange: [0, 1],
@@ -139,79 +197,91 @@ export default function MobileSearchPopup({
       visible={visible}
       animationType="none"
       transparent={true}
-      onRequestClose={() => setVisible(false)}
-    >
+      onRequestClose={() => setVisible(false)}>
       <Animated.View
         style={[styles.container, { transform: [{ translateY }] }]}
-      >
+        className="bg-background">
         <SafeAreaView style={{ flex: 1 }}>
-          <View className="flex-row items-center p-4 border-b border-secondary-800">
-            <Pressable onPress={() => setVisible(false)} className="px-2">
+          {/* Header */}
+          <View className="border-border flex-row items-center border-b p-2">
+            {/* Back Button */}
+            <Pressable onPress={() => setVisible(false)} className="mr-1 p-2">
               <FontAwesome5 name="arrow-left" size={20} color="#888" />
             </Pressable>
-            <View className="flex-1 flex-row bg-secondary-800 rounded-full mx-2 px-4 items-center">
-              <FontAwesome5
-                name="search"
-                size={16}
-                color="#888"
-                className="mr-2"
-              />
+            {/* Search Input Container */}
+            <View className="bg-background-muted flex-1 flex-row items-center rounded-full px-3">
+              <FontAwesome5 name="search" size={16} color="#888" className="mr-2" />
               <TextInput
                 ref={inputRef}
-                className="flex-1 py-2 text-text"
-                placeholder="Search notes, tasks & boards..."
+                className="flex-1 py-2 text-base text-text"
+                placeholder="Search..."
                 placeholderTextColor="#888"
-                value={query}
-                onChangeText={setQuery}
+                value={searchTerm}
+                onChangeText={setSearchTerm}
                 onSubmitEditing={handleSubmitSearch}
                 returnKeyType="search"
+                autoCorrect={false}
+                autoCapitalize="none"
               />
-              {query ? (
-                <Pressable onPress={() => setQuery('')}>
+              {/* Clear Button */}
+              {searchTerm ? (
+                <Pressable onPress={() => setSearchTerm('')} className="p-1">
                   <FontAwesome5 name="times-circle" size={16} color="#888" />
                 </Pressable>
               ) : null}
             </View>
           </View>
 
+          {/* Results Area */}
           <View style={{ flex: 1 }}>
             {isSearching ? (
-              <View className="flex-1 justify-center items-center">
-                <Text className="text-text">Searching...</Text>
+              <View className="flex-1 items-center justify-center">
+                <ActivityIndicator size="small" className="text-secondary" />
               </View>
-            ) : results.length === 0 ? (
-              query.trim() ? (
-                <View className="flex-1 justify-center items-center p-4">
-                  <Text className="text-text text-lg mb-2">
-                    No results found
+            ) : processedResults.length === 0 ? (
+              // Show different message based on whether user has typed
+              searchTerm.trim() ? (
+                <View className="flex-1 items-center justify-center p-6">
+                  <Text className="mb-2 text-center text-lg text-text">
+                    No results for "{searchTerm}"{' '}
                   </Text>
-                  <Text className="text-text-secondary text-center">
-                    Try searching for something else or tap search to see all
-                    results
+                  <Text className="text-center text-text">
+                    Try a different search term or tap Search below to see all items.{' '}
                   </Text>
                 </View>
               ) : (
-                <View className="p-4">
-                  <Text className="text-text-secondary">
-                    Start typing to search
+                <View className="flex-1 items-center justify-center p-6">
+                  <FontAwesome5 name="search" size={30} color="#555" />
+                  <Text className="mt-4 text-lg text-text">Search your items </Text>
+                  <Text className="mt-1 text-center text-text">
+                    Find notes, tasks, and boards quickly.{' '}
                   </Text>
                 </View>
               )
             ) : (
+              // Display results
               <FlatList
-                data={results}
+                data={processedResults}
                 renderItem={renderItem}
                 keyExtractor={(item) => `${item.type}-${item.item.uuid}`}
+                keyboardShouldPersistTaps="handled"
                 ListHeaderComponent={
-                  <View className="p-4 flex-row justify-between items-center">
-                    <Text className="text-text-secondary">
-                      {results.length}{' '}
-                      {results.length === 1 ? 'result' : 'results'}
+                  <View className="px-4 pb-1 pt-3">
+                    <Text className="secondary text-xs font-semibold uppercase text-text">
+                      Top Results{' '}
                     </Text>
-                    <Pressable onPress={handleSubmitSearch}>
-                      <Text className="text-primary">See all results</Text>
-                    </Pressable>
                   </View>
+                }
+                ListFooterComponent={
+                  processedResults.length > 0 ? (
+                    <Pressable
+                      onPress={handleSubmitSearch}
+                      className="border-border items-center border-t py-4">
+                      <Text className="font-medium text-primary">
+                        See all results for "{searchTerm}"{' '}
+                      </Text>
+                    </Pressable>
+                  ) : null
                 }
               />
             )}
@@ -222,9 +292,9 @@ export default function MobileSearchPopup({
   );
 }
 
+// Keep StyleSheet for non-Tailwind styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#1e1e2e', // Match your secondary-850 color
   },
 });

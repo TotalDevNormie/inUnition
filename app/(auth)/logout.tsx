@@ -30,19 +30,19 @@ export default function Logout() {
   }
 
   return (
-    <View className="flex-1 justify-center items-center p-4">
+    <View className="flex-1 items-center justify-center p-4">
       {isLoggingOut ? (
         <>
           <ActivityIndicator size="large" color="#0000ff" />
-          <Text className="mt-4 text-lg text-text">Logging out...</Text>
+          <Text className="mt-4 text-lg text-text">Logging out... </Text>
         </>
       ) : error ? (
         <View className="items-center">
-          <Text className="text-red-500 text-lg">Failed to log out</Text>
-          <Text className="text-red-500">{error.message}</Text>
+          <Text className="text-lg text-red-500">Failed to log out </Text>
+          <Text className="text-red-500">{error.message} </Text>
         </View>
       ) : (
-        <Text className="text-lg text-text">Redirecting...</Text>
+        <Text className="text-lg text-text">Redirecting... </Text>
       )}
     </View>
   );

@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  Pressable,
-  Text,
-  View,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
+import { Pressable, Text, View, StyleSheet, ActivityIndicator } from 'react-native';
 import { useState } from 'react';
 import { AntDesign } from '@expo/vector-icons';
 
@@ -35,9 +29,7 @@ export default function GoogleSignInButton({
       onSuccess?.();
     } catch (error) {
       console.error('Google sign in failed:', error);
-      onError?.(
-        error instanceof Error ? error : new Error('Google sign in failed'),
-      );
+      onError?.(error instanceof Error ? error : new Error('Google sign in failed'));
     } finally {
       setIsLoading(false);
     }
@@ -45,17 +37,16 @@ export default function GoogleSignInButton({
 
   return (
     <Pressable
-      className="flex-row items-center justify-center bg-white border border-gray-300 rounded-lg p-2 shadow-sm"
+      className="flex-row items-center justify-center rounded-lg border border-gray-300 bg-white p-2 shadow-sm"
       style={styles.googleButton}
       onPress={handleGoogleSignIn}
-      disabled={isLoading || !isOnline}
-    >
+      disabled={isLoading || !isOnline}>
       {isLoading ? (
         <ActivityIndicator size="small" color="#4285F4" />
       ) : (
         <>
           <AntDesign name="google" size={20} color="#4285F4" />
-          <Text className="ml-2 text-gray-700 font-medium">{text}</Text>
+          <Text className="ml-2 font-medium text-gray-700">{text} </Text>
         </>
       )}
     </Pressable>

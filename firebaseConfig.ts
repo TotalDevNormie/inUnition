@@ -1,19 +1,21 @@
 import { initializeApp } from 'firebase/app';
+import { initializeApp as initializeAppNative } from '@react-native-firebase/app';
 import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
-  apiKey: process.env.EXPO_PUBLIC_API_KEY,
-  authDomain: process.env.EXPO_PUBLIC_AUTH_DOMAIN,
-  projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
-  storageBucket: process.env.EXPO_PUBLIC_STORAGE_BUCKET,
-  messagingSenderId: process.env.EXPO_PUBLIC_MESSAGING_SENDER_ID,
-  appId: process.env.EXPO_PUBLIC_APP_ID,
-  measurementId: process.env.EXPO_PUBLIC_MEASUREMENT_ID,
-  databaseURL: process.env.EXPO_PUBLIC_DATABASE_URL,
+  apiKey: 'AIzaSyCnWGoxigkecLpon1sPNtJqOBYFNxaZ-lI',
+  authDomain: 'inunition.firebaseapp.com',
+  projectId: 'inunition',
+  storageBucket: 'inunition.appspot.com',
+  messagingSenderId: '1050891229502',
+  appId: '1:1050891229502:web:527f5f513aca413c57f46f',
+  measurementId: 'G-LCJ9RKD17N',
+  databaseURL: 'https://inunition-default-rtdb.firebaseio.com',
 };
 
 const app = initializeApp(firebaseConfig);
+initializeAppNative(firebaseConfig);
 
 export const db = getFirestore(app);
 export const auth = getAuth(app);

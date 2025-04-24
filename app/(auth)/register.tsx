@@ -1,83 +1,128 @@
-import {
-  View,
-  Text,
-  TextInput,
-  Pressable,
-  ActivityIndicator,
-} from 'react-native';
-import { useState, useEffect } from 'react'; // Import useEffect
+import { View, Text, TextInput, Pressable, ActivityIndicator } from 'react-native';
+import { useState, useEffect } from 'react';
 import { Link, Redirect, useRouter } from 'expo-router';
 import { useAuthStore } from '../../utils/useAuthStore';
 
-export default function Login() {
-  const { user, isAuthenticated, isLoading, login, error, clearError } =
-    useAuthStore(); // Use the auth store
+export default function Register() {
+  const { user, isAuthenticated, isLoading, register, error, clearError } = useAuthStore();
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [localError, setLocalError] = useState<string | null>(null);
   const router = useRouter();
 
-  // Clear error on component unmount (optional, but good practice)
   useEffect(() => {
     return () => {
       clearError();
     };
   }, [clearError]);
 
-  // If already logged in, redirect to home
+  useEffect(() => {
+    if (error) {
+      setLocalError(error);
+    }
+  }, [error]);
+
   if (isAuthenticated && user) {
     return <Redirect href="/" />;
   }
 
-  const handleLogin = async () => {
-    if (!email || !password) {
-      // Consider setting a specific error message for this case
-      // setError("Email and password are required");
+  const handleRegister = async () => {
+    setLocalError(null); // Clear local error before attempting to register
+    if (!email || !password || !username || !confirmPassword) {
+      setLocalError('All fields are required');
       return;
     }
-    await login(email, password); // Call the login action from the store
+    if (password !== confirmPassword) {
+      setLocalError('Passwords do not match');
+      return;
+    }
+    await register(email, password, username);
   };
 
   return (
-    <View className="p-4 flex flex-col gap-4">
-      <Text className="text-2xl text-text">Login</Text>
+    <View className="flex flex-col gap-4 p-4">
+      <Text className="text-2xl text-text">Register </Text>
 
-      {error && <Text className="text-red-500">{error}</Text>}
+      {(localError || error) && <Text className="text-red-500">{localError || error}</Text>}
+
+      <TextInput
+        placeholder="Username"
+        className="rounded-lg border-2 border-secondary p-2 text-text"
+        onChangeText={setUsername}
+        onEndEditing={handleRegister}
+        value={username}
+        autoCapitalize="none"
+        editable={!isLoading}
+        placeholderTextColor="#fff"
+        onFocus={() => {
+          clearError();
+          setLocalError(null);
+        }}
+      />
 
       <TextInput
         placeholder="Email"
-        className="border-2 border-secondary rounded-lg p-2 text-text"
+        className="rounded-lg border-2 border-secondary p-2 text-text"
         onChangeText={setEmail}
+        onEndEditing={handleRegister}
         value={email}
         keyboardType="email-address"
         autoCapitalize="none"
         editable={!isLoading}
-        onFocus={clearError}
+        placeholderTextColor="#fff"
+        onFocus={() => {
+          clearError();
+          setLocalError(null);
+        }}
       />
 
       <TextInput
         placeholder="Password"
         secureTextEntry={true}
+        onEndEditing={handleRegister}
         onChangeText={setPassword}
         value={password}
-        className="border-2 border-secondary rounded-lg p-2 text-text"
+        className="rounded-lg border-2 border-secondary p-2 text-text"
         editable={!isLoading}
-        onFocus={clearError}
+        autoCapitalize="none"
+        placeholderTextColor="#fff"
+        onFocus={() => {
+          clearError();
+          setLocalError(null);
+        }}
+      />
+
+      <TextInput
+        placeholder="Confirm Password"
+        secureTextEntry={true}
+        onChangeText={setConfirmPassword}
+        value={confirmPassword}
+        onEndEditing={handleRegister}
+        className="rounded-lg border-2 border-secondary p-2 text-text"
+        editable={!isLoading}
+        autoCapitalize="none"
+        placeholderTextColor="#fff"
+        onFocus={() => {
+          clearError();
+          setLocalError(null);
+        }}
       />
 
       <Pressable
-        className={`bg-primary p-2 rounded-lg ${isLoading ? 'opacity-70' : ''}`}
-        onPress={handleLogin}
-        disabled={isLoading}
-      >
+        className={`rounded-lg bg-primary p-2 ${isLoading ? 'opacity-70' : ''}`}
+        onPress={handleRegister}
+        disabled={isLoading}>
         {isLoading ? (
           <ActivityIndicator color="#ffffff" />
         ) : (
-          <Text className="text-background text-center">Log in</Text>
+          <Text className="text-center text-background">Register </Text>
         )}
       </Pressable>
 
-      <Link href="./register">
-        <Text className="text-text">Don't have an account? Register here</Text>
+      <Link href="./login">
+        <Text className="text-text">Already have an account? Log in here </Text>
       </Link>
     </View>
   );

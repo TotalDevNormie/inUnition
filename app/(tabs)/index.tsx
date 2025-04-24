@@ -1,14 +1,12 @@
-import { FlatList, Pressable, Text, View } from 'react-native';
+import { FlatList, Platform, Pressable, Text, View } from 'react-native';
 import { Note, useNoteStore } from '../../utils/manageNotes';
 import { Link, router } from 'expo-router';
 import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import moment from 'moment';
-import 'react-native-get-random-values';
-import { v4 } from 'uuid';
 import { Task, useTaskStore } from '../../utils/manageTasks';
 import { useTaskBoardStore } from '../../utils/manageTaskBoards';
 import NotesSlider from '~/components/NotesSlider';
-import { Button } from '~/components/Button'; // Assuming you have a Button component
+import { ScrollView } from 'react-native-gesture-handler';
 
 export default function Home() {
   const { activeNotesArray, notes } = useNoteStore();
@@ -85,40 +83,42 @@ export default function Home() {
     .slice(0, 10);
 
   return (
-    <View className="flex flex-1 flex-col gap-10 px-8">
+    <ScrollView className={`flex flex-1 flex-col rounded-lg gap-10 px-4`}>
       <View className="flex flex-col gap-8 ">
-        <Text className="text-3xl text-text">Relevant Notes</Text>
+        <Text className="text-3xl text-text">Relevant Notes </Text>
         <View className="flex ">
           <NotesSlider notes={relevantNotes} />
         </View>
       </View>
 
-      <View className="flex flex-row gap-8 portrait:flex-col">
-        <View className="max-w-[30%]">
-          <Text className="mb-8 text-3xl text-text">Tag Clusters</Text>
-          <FlatList
-            data={sortedUniqueTags}
-            contentContainerStyle={{ gap: 8 }}
-            renderItem={({ item }) => (
-              <Pressable
-                onPress={() => router.push(`/cluster/${item.tag}`)}
-                className="flex flex-col gap-2 rounded-2xl bg-secondary-850 p-4">
-                <Text className="flex-1 text-xl text-text">{item.tag} Cluster</Text>
-                <Text className="text-secondary-500">
-                  {item.count} Entri{item.count > 1 ? 'es' : 'y'}
-                </Text>
-              </Pressable>
-            )}
-          />
-        </View>
+      <View className="flex flex-row gap-8 pt-8 portrait:flex-col">
+        {sortedUniqueTags && (
+          <View className="min-w-[30%]">
+            <Text className="mb-8 text-3xl text-text">Tag Clusters </Text>
+            <FlatList
+              data={sortedUniqueTags}
+              contentContainerStyle={{ gap: 8 }}
+              renderItem={({ item }) => (
+                <Pressable
+                  onPress={() => router.push(`/cluster/${item.tag}`)}
+                  className="flex flex-col gap-2 rounded-2xl bg-secondary-850 p-4">
+                  <Text className="flex-1 text-xl text-text">{item.tag} Cluster </Text>
+                  <Text className="text-secondary-500">
+                    {item.count} Entri{item.count > 1 ? 'es' : 'y'}{' '}
+                  </Text>
+                </Pressable>
+              )}
+            />
+          </View>
+        )}
         <View className="flex-1">
-          {relevantTasks && <Text className="mb-8 text-3xl text-text">Relevant Tasks</Text>}
+          {relevantTasks && <Text className="mb-8 text-3xl text-text">Relevant Tasks </Text>}
           <View className="flex ">
             <View className="overflow-hidden rounded-xl">
               <FlatList
                 data={relevantTasks}
                 className="rounded-2xl"
-                ListEmptyComponent={<Text></Text>}
+                ListEmptyComponent={<Text> </Text>}
                 contentContainerStyle={{ gap: 8 }}
                 renderItem={({ item: task }) => (
                   <Pressable
@@ -129,23 +129,23 @@ export default function Home() {
                     } flex flex-col gap-2 rounded-2xl p-4 `}>
                     <View className="flex flex-row gap-2">
                       <Text className="flex-1 text-xl text-text">
-                        {task?.name?.length > 30 ? task.name.slice(0, 27) + '...' : task.name}
+                        {task?.name?.length > 30 ? task.name.slice(0, 27) + '...' : task.name}{' '}
                       </Text>
                       <Text className="color-text">
-                        <FontAwesome5 name="tasks" size={24} />
+                        <FontAwesome5 name="tasks" size={24} />{' '}
                       </Text>
                     </View>
                     <Text className="max-h-36 text-text">
                       {task?.description?.length > 100
                         ? task.description.slice(0, 97) + '...'
-                        : task.description}
+                        : task.description}{' '}
                     </Text>
-                    <Text className="text-primary">{getTaskBoard(task.taskBoardUUID)?.name}</Text>
+                    <Text className="text-primary">{getTaskBoard(task.taskBoardUUID)?.name} </Text>
                     <View className="mt-auto flex flex-row items-center justify-between">
                       {task?.endsAt ? (
-                        <Text className="text-primary">Due {moment(task.endsAt).fromNow()}</Text>
+                        <Text className="text-primary">Due {moment(task.endsAt).fromNow()} </Text>
                       ) : (
-                        <Text className="text-accent">Status: {task.completionStatus}</Text>
+                        <Text className="text-accent">Status: {task.completionStatus} </Text>
                       )}
                       {(() => {
                         const board = getTaskBoard(task.taskBoardUUID);
@@ -168,7 +168,7 @@ export default function Home() {
                               className="rounded bg-primary px-2 py-1">
                               <Text className="flex flex-1 items-center gap-1 text-background">
                                 <MaterialIcons name="navigate-next" size={20} />
-                                <Text className="text-background">{nextStatus}</Text>
+                                <Text className="text-background">{nextStatus} </Text>{' '}
                               </Text>
                             </Pressable>
                           );
@@ -183,6 +183,6 @@ export default function Home() {
           </View>
         </View>
       </View>
-    </View>
+    </ScrollView>
   );
 }

@@ -4,10 +4,12 @@ import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { MMKV } from 'react-native-mmkv';
-import { collection, doc, setDoc, query, where, getDocs, onSnapshot } from 'firebase/firestore';
 import { useAuthStore } from './useAuthStore';
 import { useTaskStore } from './manageTasks'; // Import the task store
 import { db } from '../firebaseConfig';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import firestore from '@react-native-firebase/firestore';
+import { Platform } from 'react-native';
 
 const storage = new MMKV();
 const TASK_BOARDS = 'taskBoards';
@@ -35,7 +37,6 @@ interface TaskBoardState {
   taskBoardsWithTag: (tag: string) => TaskBoard[];
   saveTaskBoard: (taskBoard: Partial<TaskBoard>) => Promise<void | string>;
   deleteTaskBoard: (uuid: string) => Promise<void>;
-  deleteAllTaskBoards: (local: boolean) => Promise<void>;
   syncWithFirebase: () => Promise<void>;
 }
 
@@ -96,10 +97,14 @@ export const useTaskBoardStore = create<TaskBoardState>()(
           try {
             const user = useAuthStore.getState().user;
             if (!user || !user.uid) throw new Error('User not authenticated');
-            await setDoc(doc(db, TASK_BOARDS, uuid), {
-              ...newTaskBoard,
-              userUid: user.uid,
-            });
+            // Use collection().doc().set() pattern for react-native-firebase
+            await firestore()
+              .collection(TASK_BOARDS)
+              .doc(uuid)
+              .set({
+                ...newTaskBoard,
+                userUid: user.uid,
+              });
             const { [uuid]: _, ...remainingChanges } = get().pendingChanges;
             set({ pendingChanges: remainingChanges });
           } catch (error) {
@@ -146,30 +151,18 @@ export const useTaskBoardStore = create<TaskBoardState>()(
           try {
             const user = useAuthStore.getState().user;
             if (!user || !user.uid) throw new Error('User not authenticated');
-            await setDoc(doc(db, TASK_BOARDS, uuid), {
-              ...softDeletedTaskBoard,
-              userUid: user.uid,
-            });
+            // Use collection().doc().set() pattern for react-native-firebase
+            await firestore()
+              .collection(TASK_BOARDS)
+              .doc(uuid)
+              .set({
+                ...softDeletedTaskBoard,
+                userUid: user.uid,
+              });
             const { [uuid]: _, ...remainingChanges } = get().pendingChanges;
             set({ pendingChanges: remainingChanges });
           } catch (error) {
             console.error('Failed to sync deletion with Firebase:', error);
-          }
-        }
-      },
-
-      deleteAllTaskBoards: async (local: boolean) => {
-        if (local) {
-          set({ taskBoards: {}, pendingChanges: {} });
-        } else {
-          const user = useAuthStore.getState().user;
-          if (!user || !user.uid) {
-            console.log('deleteAllTaskBoards user not logged');
-            return;
-          }
-          const taskBoards = get().taskBoards;
-          for (const uuid in taskBoards) {
-            await get().deleteTaskBoard(uuid);
           }
         }
       },
@@ -182,12 +175,14 @@ export const useTaskBoardStore = create<TaskBoardState>()(
 
         const { taskBoards, pendingChanges } = get();
         try {
-          const boardsRef = collection(db, TASK_BOARDS);
-          const boardsQuery = query(boardsRef, where('userUid', '==', user.uid));
-          const querySnapshot = await getDocs(boardsQuery);
+          // Use firestore().collection().where() pattern
+          const boardsQuery = firestore().collection(TASK_BOARDS).where('userUid', '==', user.uid);
+          // Use query.get() pattern
+          const querySnapshot = await boardsQuery.get();
           const firebaseTaskBoards: { [key: string]: TaskBoard } = {};
 
           querySnapshot.forEach((docSnap) => {
+            // Use docSnap.data() which is already typed in react-native-firebase
             firebaseTaskBoards[docSnap.id] = docSnap.data() as TaskBoard;
           });
 
@@ -229,10 +224,14 @@ export const useTaskBoardStore = create<TaskBoardState>()(
             const pendingChange = pendingChanges[uuid];
             if (!firebaseTaskBoard || pendingChange) {
               try {
-                await setDoc(doc(db, TASK_BOARDS, uuid), {
-                  ...localTaskBoard,
-                  userUid: user.uid,
-                });
+                // Use collection().doc().set() pattern
+                await firestore()
+                  .collection(TASK_BOARDS)
+                  .doc(uuid)
+                  .set({
+                    ...localTaskBoard,
+                    userUid: user.uid,
+                  });
               } catch (error) {
                 console.error('Failed to sync taskBoard to Firebase:', error);
               }
@@ -256,23 +255,38 @@ export const useTaskBoardStore = create<TaskBoardState>()(
 );
 
 let unsubscribe: (() => void) | null = null;
-export const setupTaskBoardsListener = (userId?: string) => {
+
+export const setupTaskBoardsListener = (userId?: string | null) => {
   if (unsubscribe) {
     unsubscribe();
     unsubscribe = null;
   }
-  if (userId) {
-    const boardsRef = collection(db, TASK_BOARDS);
-    const boardsQuery = query(boardsRef, where('userUid', '==', userId));
-    unsubscribe = onSnapshot(boardsQuery, () => {
-      const store = useTaskBoardStore.getState();
-      if (store.lastSyncTimestamp < Date.now() - 1000) {
-        store.syncWithFirebase();
-      }
-    });
+
+  try {
+    if (Platform.OS !== 'web') {
+      unsubscribe = firestore()
+        .collection(TASK_BOARDS)
+        .where('userUid', '==', userId)
+        .onSnapshot(() => {
+          const store = useTaskBoardStore.getState();
+          if (store.lastSyncTimestamp < Date.now() - 1000) {
+            store.syncWithFirebase();
+          }
+        });
+    } else {
+      const boardsRef = collection(db, TASK_BOARDS);
+      const boardsQuery = query(boardsRef, where('userUid', '==', userId));
+      unsubscribe = onSnapshot(boardsQuery, () => {
+        const store = useTaskBoardStore.getState();
+        if (store.lastSyncTimestamp < Date.now() - 1000) {
+          store.syncWithFirebase();
+        }
+      });
+    }
+  } catch (error) {
+    console.error('Error setting up TaskBoards listener:', error);
   }
 };
-
 NetInfo.addEventListener((state) => {
   if (state.isConnected) {
     useTaskBoardStore.getState().syncWithFirebase();

@@ -35,7 +35,7 @@ const NotePageContent: NotePage = ({ uuid }) => {
       <View className="flex flex-1 ">
         <NoteInput uuid={uuid} />
       </View>
-      <View className="flex min-w-[20rem] landscape:flex-1 border-l-[2px] border-l-secondary portrait:border-l-[0px] portrait:border-t-[2px] portrait:border-t-secondary">
+      <View className="flex min-w-[20rem] border-l-[2px] border-l-secondary portrait:border-l-[0px] portrait:border-t-[2px] portrait:border-t-secondary landscape:flex-1">
         <View className="sticky top-0">
           <NoteSettings uuid={uuid} />
         </View>

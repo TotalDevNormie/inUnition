@@ -1,22 +1,19 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { NotePage, NoteParent } from '../../components/notes/NoteParent';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import NoteInput from '../../components/notes/NoteInput';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
-import { TagsInput } from '../../components/TagsInput';
-import DueDateInput from '../../components/DueDateInput';
-import { AntDesign, Entypo, FontAwesome5 } from '@expo/vector-icons';
-import { router } from 'expo-router';
-import { useNoteStore } from '../../utils/manageNotes';
+import { AntDesign, FontAwesome5 } from '@expo/vector-icons';
 import NoteSettings from '~/components/notes/NoteSettings';
+import { Link, router } from 'expo-router';
+import { ScrollView, Pressable, Text, View, useWindowDimensions } from 'react-native';
+import 'react-native-get-random-values';
 
 const Note = () => <NoteParent NotePageContent={NotePageContent} />;
 
 const NotePageContent: NotePage = ({ uuid }) => {
   const bottomSheetRef = useRef<BottomSheet>(null);
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const { deleteNote } = useNoteStore();
 
   useEffect(() => {
     if (settingsOpen) {
@@ -26,25 +23,24 @@ const NotePageContent: NotePage = ({ uuid }) => {
     }
   }, [settingsOpen]);
 
-  //callbacks
   const handleSheetChanges = useCallback((index: number) => {
     if (index == -1) setSettingsOpen(false);
   }, []);
   return (
-    <View className="flex min-h-screen grow">
-      <View className="flex flex-row justify-between px-8">
+    <View className={`mb-2 flex flex-1 flex-col overflow-hidden rounded-xl px-4`}>
+      <View className="flex flex-row justify-between px-4">
         <Pressable onPress={() => router.back()}>
           <Text className="text-text">
-            <AntDesign name="arrowleft" size={24} />
+            <AntDesign name="arrowleft" size={24} />{' '}
           </Text>
         </Pressable>
         <View className="flex flex-row gap-2">
           <Pressable className="p-2">
-            <Text className="text-text"></Text>
+            <Text className="text-text"> </Text>
           </Pressable>
           <Pressable className="p-2" onPress={() => setSettingsOpen(!settingsOpen)}>
             <Text className="text-text">
-              <Ionicons name="settings" size={24} />
+              <Ionicons name="settings" size={24} />{' '}
             </Text>
           </Pressable>
         </View>

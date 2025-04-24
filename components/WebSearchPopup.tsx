@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -7,180 +7,242 @@ import {
   Pressable,
   FlatList,
   Platform,
-  StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
-import { useSearch } from '../utils/SearchContext';
+import { useSearchStore, SearchItem, SearchItemType } from '../utils/useSearchStore';
 import { router } from 'expo-router';
 import moment from 'moment';
 import { Note } from '../utils/manageNotes';
 import { TaskBoard } from '../utils/manageTaskBoards';
 import { Task } from '../utils/manageTasks';
 
+type SearchResult = {
+  type: SearchItemType;
+  item: SearchItem;
+  matches: { text: string }[];
+};
+
 export default function SearchPopup() {
   const listenerAddedRef = useRef(false);
-  const {
-    query,
-    setQuery,
-    results,
-    isSearching,
-    filters,
-    setFilters,
-    sortBy,
-    setSortBy,
-  } = useSearch();
+  const { searchTerm, setSearchTerm, searchResults, search } = useSearchStore();
 
   const [visible, setVisible] = useState(false);
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const [processedResults, setProcessedResults] = useState<SearchResult[]>([]);
   const inputRef = useRef<TextInput>(null);
-  const flatListRef = useRef<FlatList>(null);
+  const flatListRef = useRef<FlatList<any>>(null);
+
+  // Process search results to match the expected format
+  useEffect(() => {
+    if (searchTerm.trim() === '') {
+      setProcessedResults([]);
+      return;
+    }
+
+    const results: SearchResult[] = searchResults.map((item) => {
+      // Extract content for matching
+      let contentText = '';
+      if (item.content) {
+        contentText = item.content;
+      } else if (item.description) {
+        contentText = item.description;
+      }
+
+      // Create match object
+      const matches = [];
+      if (contentText) {
+        const lowerContent = contentText.toLowerCase();
+        const lowerQuery = searchTerm.toLowerCase();
+        const index = lowerContent.indexOf(lowerQuery);
+
+        if (index >= 0) {
+          // Get context around the match
+          const start = Math.max(0, index - 30);
+          const end = Math.min(lowerContent.length, index + searchTerm.length + 70);
+          let matchText = contentText.substring(start, end);
+
+          // Add ellipsis if needed
+          if (start > 0) matchText = '...' + matchText;
+          if (end < contentText.length) matchText = matchText + '...';
+
+          matches.push({ text: matchText });
+        } else {
+          // If no direct match in content, just use the beginning
+          matches.push({
+            text: contentText.substring(0, 100) + (contentText.length > 100 ? '...' : ''),
+          });
+        }
+      } else {
+        matches.push({ text: '' });
+      }
+
+      return {
+        type: item.type,
+        item: item,
+        matches,
+      };
+    });
+
+    setProcessedResults(results);
+  }, [searchResults, searchTerm]);
+
+  // Listen for search trigger event
+  useEffect(() => {
+    if (Platform.OS === 'web') {
+      const handleTriggerSearch = () => {
+        setVisible(true);
+      };
+      document.addEventListener('triggerSearch', handleTriggerSearch);
+      return () => {
+        document.removeEventListener('triggerSearch', handleTriggerSearch);
+      };
+    }
+  }, []);
 
   const handleKeyDown = (e: KeyboardEvent) => {
-    // Check for Ctrl+K or Cmd+K to open search
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       e.preventDefault();
       setVisible(true);
+      return;
     }
-
-    // Close on Escape
-    if (e.key === 'Escape' && visible) {
+    if (!visible) return;
+    if (e.key === 'Escape') {
+      e.preventDefault();
       setVisible(false);
+      return;
     }
-
-    // Handle keyboard navigation when popup is visible
-    if (visible) {
+    if (processedResults.length > 0) {
       if (e.key === 'ArrowDown') {
         e.preventDefault();
         setSelectedIndex((prev) => {
-          const newIndex = prev < results.length - 1 ? prev + 1 : 0;
-          // Scroll to the selected item
-          if (flatListRef.current) {
-            flatListRef.current.scrollToIndex({
-              index: newIndex,
-              animated: true,
-              viewPosition: 0.5,
-            });
-          }
-          return newIndex;
+          const next = prev < processedResults.length - 1 ? prev + 1 : 0;
+          flatListRef.current?.scrollToIndex({
+            index: next,
+            animated: true,
+            viewPosition: 0.5,
+          });
+          return next;
         });
       } else if (e.key === 'ArrowUp') {
         e.preventDefault();
         setSelectedIndex((prev) => {
-          const newIndex = prev > 0 ? prev - 1 : results.length - 1;
-          // Scroll to the selected item
-          if (flatListRef.current) {
-            flatListRef.current.scrollToIndex({
-              index: newIndex,
-              animated: true,
-              viewPosition: 0.5,
-            });
-          }
-          return newIndex;
+          const next = prev > 0 ? prev - 1 : processedResults.length - 1;
+          flatListRef.current?.scrollToIndex({
+            index: next,
+            animated: true,
+            viewPosition: 0.5,
+          });
+          return next;
         });
-      } else if (
-        e.key === 'Enter' &&
-        results.length > 0 &&
-        selectedIndex >= 0
-      ) {
+      } else if (e.key === 'Enter' && selectedIndex >= 0) {
         e.preventDefault();
-        const selectedItem = results[selectedIndex];
-        navigateToItem(selectedItem.item);
-        setVisible(false);
+        const sel = processedResults[selectedIndex];
+        if (sel) {
+          navigateToItem(sel.item);
+          if (Platform.OS === 'web') inputRef.current?.blur();
+        }
       }
     }
   };
 
-  // Listen for keyboard shortcuts on web
   useEffect(() => {
     if (Platform.OS !== 'web') return;
-
-    // Add the event listener only once
     if (!listenerAddedRef.current) {
       window.addEventListener('keydown', handleKeyDown);
       listenerAddedRef.current = true;
     }
-
-    // Cleanup function
     return () => {
       if (listenerAddedRef.current) {
         window.removeEventListener('keydown', handleKeyDown);
         listenerAddedRef.current = false;
       }
     };
-  }, [visible, results, selectedIndex]);
+  }, [visible, processedResults, selectedIndex]);
 
-  // Focus input when modal opens and reset selected index
   useEffect(() => {
     if (visible) {
-      setTimeout(() => {
-        inputRef.current?.focus();
-        setSelectedIndex(0);
-      }, 50);
+      setSelectedIndex(0);
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: false });
+      const t = setTimeout(() => inputRef.current?.focus(), 50);
+      return () => clearTimeout(t);
     }
   }, [visible]);
 
-  const navigateToItem = (item: Note | Task | TaskBoard) => {
-    setVisible(false);
+  useEffect(() => {
+    setSelectedIndex(0);
+    if (visible) {
+      flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+    }
+  }, [processedResults, visible]);
 
-    if ((item as Note).content !== undefined) {
+  // Perform search when search term changes
+  useEffect(() => {
+    search();
+  }, [searchTerm, search]);
+
+  const navigateToItem = (item: SearchItem) => {
+    setVisible(false);
+    setSearchTerm('');
+
+    if (item.type === 'note') {
       router.push(`/note/${item.uuid}`);
-    } else if ((item as Task).taskBoardUUID !== undefined) {
-      router.push(`/taskboard/${(item as Task).taskBoardUUID}`);
-    } else if ((item as TaskBoard).uuid !== undefined) {
+    } else if (item.type === 'task') {
+      router.push(`/taskboard/${item.uuid.split('-')[0]}?taskId=${item.uuid}`);
+    } else if (item.type === 'taskBoard') {
       router.push(`/taskboard/${item.uuid}`);
+    } else {
+      console.warn('Cannot navigate to item:', item);
     }
   };
 
-  const getIcon = (type: string) => {
+  const getIcon = (type: SearchItemType) => {
     switch (type) {
       case 'note':
         return 'sticky-note';
       case 'task':
         return 'tasks';
-      case 'board':
+      case 'taskBoard':
         return 'clipboard-list';
       default:
         return 'file';
     }
   };
 
-  const renderItem = ({ item, index }: { item: any; index: number }) => {
+  const renderItem = ({ item, index }: { item: SearchResult; index: number }) => {
     const { type, item: data, matches } = item;
-    const isSelected = index === selectedIndex;
+    const isSel = index === selectedIndex;
+    const title = data.title || data.name || 'Untitled';
+    const updated = data.updatedAt || data.createdAt || new Date().toISOString();
 
     return (
       <Pressable
         onPress={() => navigateToItem(data)}
-        style={[styles.resultItem, isSelected && styles.selectedItem]}
-        onHoverIn={() => setSelectedIndex(index)}
-      >
+        className={`px-4 py-2.5 ${isSel ? 'bg-primary/10' : ''}`}
+        onHoverIn={() => setSelectedIndex(index)}>
         <View className="flex-row items-center">
           <View
-            className={`w-8 h-8 rounded-full items-center justify-center mr-3 ${
-              isSelected ? 'bg-primary-dark' : 'bg-primary'
-            }`}
-          >
-            <FontAwesome5 name={getIcon(type)} size={16} color="#fff" />
+            className={`mr-3 h-8 w-8 items-center justify-center rounded-full text-text ${
+              isSel ? 'bg-primary' : 'bg-secondary'
+            }`}>
+            <FontAwesome5 name={getIcon(type)} size={16} className="text-text" />
           </View>
           <View className="flex-1">
             <Text
-              className={`text-lg font-semibold ${
-                isSelected ? 'text-primary' : 'text-text'
-              }`}
-            >
-              {data.title || data.name || 'Untitled'}
+              className={`font-semibold text-text ${isSel ? 'text-primary' : 'text-text'}`}
+              numberOfLines={1}>
+              {title}{' '}
             </Text>
-            <Text className="text-text/50 text-sm">
-              {type.charAt(0).toUpperCase() + type.slice(1)} • Updated{' '}
-              {moment(data.updatedAt).fromNow()}
+            <Text className="mt-0.5 text-xs text-accent">
+              {type === 'taskBoard' ? 'Board' : type.charAt(0).toUpperCase() + type.slice(1)} •
+              Updated {moment(updated).fromNow()}{' '}
             </Text>
           </View>
         </View>
-
-        {matches.length > 0 && (
-          <View className="mt-2 ml-11">
-            <Text className="text-text" numberOfLines={2}>
-              {matches[0].text}
+        {matches[0]?.text && (
+          <View className="ml-11 mt-1 pr-4">
+            <Text className="text-sm text-text" numberOfLines={2}>
+              {matches[0].text}{' '}
             </Text>
           </View>
         )}
@@ -188,20 +250,15 @@ export default function SearchPopup() {
     );
   };
 
-  // Handle scroll error
-  const onScrollToIndexFailed = (info: {
-    index: number;
-    highestMeasuredFrameIndex: number;
-    averageItemLength: number;
-  }) => {
-    const wait = new Promise((resolve) => setTimeout(resolve, 100));
-    wait.then(() => {
+  const onScrollToIndexFailed = (info: any) => {
+    console.warn('ScrollToIndexFailed:', info);
+    setTimeout(() => {
       flatListRef.current?.scrollToIndex({
         index: info.index,
         animated: true,
         viewPosition: 0.5,
       });
-    });
+    }, 100);
   };
 
   if (Platform.OS !== 'web') return null;
@@ -209,90 +266,83 @@ export default function SearchPopup() {
   return (
     <Modal
       visible={visible}
-      transparent={true}
+      transparent
       animationType="fade"
-      onRequestClose={() => setVisible(false)}
-    >
+      onRequestClose={() => setVisible(false)}>
       <Pressable
-        className="bg-background-950/50 flex-1 items-center justify-center"
-        onPress={() => setVisible(false)}
-      >
-        <View className="w-full items-center">
+        className="flex-1 items-center justify-start bg-black/50 pt-[10%]"
+        onPress={() => setVisible(false)}>
+        <View className="w-[90%] max-w-2xl">
           <Pressable
-            className="max-w-[40rem] w-[90%] bg-background rounded-lg overflow-hidden shadow-lg"
-            onPress={(e) => e.stopPropagation()}
-          >
-            <View className="p-2 flex-row items-center border-b border-secondary-800">
-              <FontAwesome5
-                name="search"
-                size={18}
-                color="#888"
-                className="mx-2"
-              />
+            className="overflow-hidden rounded-lg bg-background shadow-lg"
+            onPress={(e) => e.stopPropagation()}>
+            <View className="border-border flex-row items-center border-b px-2 py-1">
+              <FontAwesome5 name="search" size={18} className="mx-2 text-text" />
               <TextInput
                 ref={inputRef}
-                className="flex-1 p-3 text-text"
+                className="flex-1 px-2 py-3 text-base text-text"
                 placeholder="Search notes, tasks & boards..."
                 placeholderTextColor="#888"
-                value={query}
-                onChangeText={setQuery}
+                value={searchTerm}
+                onChangeText={setSearchTerm}
+                autoCorrect={false}
+                autoCapitalize="none"
+                returnKeyType="search"
+                onSubmitEditing={() => {
+                  if (processedResults.length > 0 && selectedIndex >= 0) {
+                    navigateToItem(processedResults[selectedIndex].item);
+                  }
+                }}
               />
-              <View className="flex-row">
-                <Pressable onPress={() => setQuery('')} className="px-2">
-                  <FontAwesome5 name="times" size={18} color="#888" />
+              {searchTerm.length > 0 && (
+                <Pressable onPress={() => setSearchTerm('')} className="p-2">
+                  <FontAwesome5 name="times-circle" size={18} color="#888" />
                 </Pressable>
-                <Text className="text-text-secondary px-2 py-1 bg-secondary-800 rounded ml-2">
-                  ESC
-                </Text>
-              </View>
+              )}
+              <Text className="bg-background-muted ml-2 mr-1 rounded px-1.5 py-0.5 text-xs text-text">
+                ESC{' '}
+              </Text>
             </View>
 
-            <View style={styles.resultsContainer}>
-              {isSearching ? (
-                <View className="p-4 items-center">
-                  <Text className="text-text">Searching...</Text>
-                </View>
-              ) : results.length === 0 ? (
-                <View className="p-4 items-center">
-                  <Text className="text-text">No results found</Text>
+            <View className="max-h-[400px] min-h-[60px]">
+              {processedResults.length === 0 ? (
+                <View className="min-h-[60px] items-center justify-center p-4">
+                  <Text className="text-text-secondary">
+                    {searchTerm.trim() ? 'No results found' : 'Type to search'}{' '}
+                  </Text>
                 </View>
               ) : (
                 <FlatList
                   ref={flatListRef}
-                  data={results}
+                  data={processedResults}
                   renderItem={renderItem}
-                  keyExtractor={(item) => `${item.type}-${item.item.uuid}`}
-                  scrollEnabled={true}
+                  keyExtractor={(i) => `${i.type}-${i.item.uuid}`}
+                  scrollEnabled
                   onScrollToIndexFailed={onScrollToIndexFailed}
-                  ItemSeparatorComponent={() => (
-                    <View className="h-px bg-secondary-800 my-1" />
-                  )}
-                  initialScrollIndex={0}
+                  initialNumToRender={10}
+                  maxToRenderPerBatch={10}
+                  windowSize={10}
+                  keyboardShouldPersistTaps="handled"
                 />
               )}
+            </View>
 
-              <View className="p-3 border-t border-secondary-800">
-                <View className="flex-row justify-between">
-                  <View className="flex-row">
-                    <Text className="text-text text-sm mr-4">
-                      <Text className="text-primary">↑↓ </Text> to navigate
-                    </Text>
-                    <Text className="text-text text-sm">
-                      <Text className="text-primary">Enter</Text> to select
-                    </Text>
-                  </View>
-                  <Pressable
-                    onPress={() => {
-                      setVisible(false);
-                      router.push('/search');
-                    }}
-                  >
-                    <Text className="text-primary text-sm">
-                      Advanced Search
-                    </Text>
-                  </Pressable>
-                </View>
+            <View className="border-border flex-row items-center justify-between border-t p-3">
+              <View className="flex-row items-center space-x-4">
+                <Text className="text-xs text-text">
+                  <Text className="font-bold text-text">↑↓ </Text> to navigate{' '}
+                </Text>
+                <Text className="text-xs text-text">
+                  <Text className="font-bold text-text">Enter </Text> to select{' '}
+                </Text>
               </View>
+              <Pressable
+                onPress={() => {
+                  setVisible(false);
+                  router.push('/search');
+                }}>
+                <Text className="text-xs font-medium text-primary">Advanced Search </Text>
+              </Pressable>
             </View>
           </Pressable>
         </View>
@@ -300,15 +350,3 @@ export default function SearchPopup() {
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  resultsContainer: {
-    maxHeight: 500,
-  },
-  resultItem: {
-    padding: 12,
-  },
-  selectedItem: {
-    backgroundColor: 'rgba(137, 180, 250, 0.1)',
-  },
-});

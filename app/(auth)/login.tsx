@@ -28,9 +28,9 @@ export default function Login() {
 
   return (
     <View className="flex flex-col gap-4 p-4">
-      <Text className="text-2xl text-text">Login</Text>
+      <Text className="text-2xl text-text">Login </Text>
 
-      {error && <Text className="text-red-500">{error}</Text>}
+      {error && <Text className="text-red-500">{error} </Text>}
 
       <TextInput
         placeholder="Email"
@@ -41,6 +41,7 @@ export default function Login() {
         autoCapitalize="none"
         editable={!isLoading}
         onFocus={clearError}
+        placeholderTextColor="#fff"
         onEndEditing={handleLogin}
       />
 
@@ -50,6 +51,8 @@ export default function Login() {
         onChangeText={setPassword}
         value={password}
         className="rounded-lg border-2 border-secondary p-2 text-text"
+        placeholderTextColor="#fff"
+        autoCapitalize="none"
         editable={!isLoading}
         onFocus={clearError}
         onEndEditing={handleLogin}
@@ -60,14 +63,14 @@ export default function Login() {
         onPress={handleLogin}
         disabled={isLoading}>
         {isLoading ? (
-          <ActivityIndicator c />
+          <ActivityIndicator />
         ) : (
-          <Text className="text-center text-background">Log in</Text>
+          <Text className="text-center text-background">Log in </Text>
         )}
       </Pressable>
 
       <Link href="./register">
-        <Text className="text-text">Don't have an account? Register here</Text>
+        <Text className="text-text">Don't have an account? Register here </Text>
       </Link>
     </View>
   );

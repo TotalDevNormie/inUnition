@@ -22,7 +22,7 @@ export default function NavLink({
   mobile = false,
 }: NavLinkProps) {
   const [isHovered, setIsHovered] = useState(false);
-  
+
   return (
     <Pressable
       onPress={() => router.push(href)}
@@ -30,48 +30,42 @@ export default function NavLink({
       onHoverOut={() => setIsHovered(false)}
       className={`
         rounded-lg p-2 
-        ${active ? 'bg-secondary' : isHovered ? 'bg-secondary/50' : 'bg-transparent'} 
+        ${active && !mobile ? 'bg-secondary' : isHovered ? 'bg-secondary/50' : 'bg-transparent'} 
         flex flex-row items-center gap-2 
         ${className}
       `}
-      style={{ 
+      style={{
         overflow: 'hidden',
-        transition: 'all 0.2s ease-in-out'
-      }}
-    >
-      <Text className={`
+        transition: 'all 0.2s ease-in-out',
+      }}>
+      <Text
+        className={`
         ${active ? 'text-primary' : 'text-text'} 
         flex items-center justify-center
         ${collapsed ? 'w-full' : 'w-auto'}
       `}>
-        {icon}
+        {icon}{' '}
       </Text>
-      
+
       {children && !collapsed && (
-        <Text 
+        <Text
           className={`
             text-sm font-medium
             ${active ? 'text-primary' : 'text-text'}
             flex-1
           `}
           numberOfLines={1}
-          style={{ 
+          style={{
             opacity: collapsed ? 0 : 1,
-            transition: 'opacity 0.2s ease-in-out'
-          }}
-        >
-          {children}
+            transition: 'opacity 0.2s ease-in-out',
+          }}>
+          {children}{' '}
         </Text>
       )}
-      
+
       {collapsed && children && isHovered && (
-        <View 
-          className="absolute left-full ml-2 bg-secondary-850 rounded-md px-2 py-1 z-50"
-          style={{ 
-            boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
-          }}
-        >
-          <Text className="text-text whitespace-nowrap">{children}</Text>
+        <View className="absolute left-full z-50 ml-2 rounded-md bg-secondary-850 px-2 py-1">
+          <Text className="whitespace-nowrap text-text">{children} </Text>
         </View>
       )}
     </Pressable>

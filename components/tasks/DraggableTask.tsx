@@ -56,23 +56,17 @@ export default function DraggableTask({
         const stateArray = Object.keys(columnRefs);
         const stateIndex = stateArray.findIndex((key) => key === task.completionStatus);
 
-      console.log(stateIndex)
-
+        console.log(stateIndex);
 
         if (translateX.value < -taskMeasurements.width / 3) {
-        console.log('left', (stateIndex - 1 + stateArray.length) % stateArray.length)
+          console.log('left', (stateIndex - 1 + stateArray.length) % stateArray.length);
           runOnJS(onDragEnd)(
             task,
-            stateArray[
-              (stateIndex - 1 + stateArray.length) % stateArray.length
-            ],
+            stateArray[(stateIndex - 1 + stateArray.length) % stateArray.length]
           );
         } else if (translateX.value > taskMeasurements.width / 3) {
-        console.log('right', (stateIndex + 1 + stateArray.length) % stateArray.length)
-          runOnJS(onDragEnd)(
-            task,
-            stateArray[(stateIndex + 1) % stateArray.length],
-          );
+          console.log('right', (stateIndex + 1 + stateArray.length) % stateArray.length);
+          runOnJS(onDragEnd)(task, stateArray[(stateIndex + 1) % stateArray.length]);
         }
         translateX.value = withSpring(0);
         return;
@@ -114,30 +108,20 @@ export default function DraggableTask({
     <GestureDetector gesture={gesture}>
       <Animated.View
         ref={taskRef}
-        className="p-4 rounded-xl bg-gray-700 border-2d flex flex-row gap-2 border-gray-600 cursor-grab active:cursor-grabbing"
-        style={[animatedStyles]}
-      >
-        <View className="flex gap-2 flex-1">
-          <Text className="text-text text-lg">{task.name}</Text>
-          {task?.description && (
-            <Text className="text-text/50">{task?.description}</Text>
-          )}
-          {task?.tags && (
-            <Text className="text-secondary">{task?.tags?.join(', ')}</Text>
-          )}
+        className="border-2d flex cursor-grab flex-row gap-2 rounded-xl border-gray-600 bg-gray-700 p-4 active:cursor-grabbing"
+        style={[animatedStyles]}>
+        <View className="flex flex-1 gap-2">
+          <Text className="text-lg text-text">{task.name} </Text>
+          {task?.description && <Text className="text-text/50">{task?.description} </Text>}
+          {task?.tags && <Text className="text-accent">{task?.tags?.join(', ')} </Text>}
           {task?.endsAt && (
-            <Text className="text-primary">
-              Due {moment(task?.endsAt).fromNow()}
-            </Text>
+            <Text className="text-primary">Due {moment(task?.endsAt).fromNow()} </Text>
           )}
 
-          {task?.endsAt && (
-            <Text className="text-secondary">{task?.tags?.join(', ')}</Text>
-          )}
         </View>
         <Pressable onPress={() => editTask(task)}>
-          <Text className="text-text text-lg">
-            <MaterialIcons name="edit" size={20} />
+          <Text className="text-lg text-text">
+            <MaterialIcons name="edit" size={20} />{' '}
           </Text>
         </Pressable>
       </Animated.View>

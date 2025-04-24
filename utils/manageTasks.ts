@@ -6,16 +6,10 @@ import { useAuthStore } from './useAuthStore';
 import { useTaskBoardStore } from './manageTaskBoards';
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
-import {
-  collection,
-  doc,
-  setDoc,
-  query,
-  where,
-  getDocs,
-  onSnapshot,
-} from 'firebase/firestore';
 import { db } from '../firebaseConfig';
+import firestore from '@react-native-firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { Platform } from 'react-native';
 
 export type Task = {
   uuid: string;
@@ -65,8 +59,7 @@ export const useTaskStore = create<TaskState>()(
       lastSyncTimestamp: Date.now(),
       tasksFromBoard: (boardUUID) =>
         Object.values(get().tasks).filter(
-          ({ taskBoardUUID, status }) =>
-            taskBoardUUID === boardUUID && status === 'active',
+          ({ taskBoardUUID, status }) => taskBoardUUID === boardUUID && status === 'active'
         ),
       getTask: (uuid) => get().tasks[uuid],
       activeTasksArray: () =>
@@ -86,10 +79,7 @@ export const useTaskStore = create<TaskState>()(
           throw new Error('No completion statuses found');
 
         let newCompletionStatus: string;
-        if (
-          task.completionStatus &&
-          completionStatuses.includes(task.completionStatus)
-        ) {
+        if (task.completionStatus && completionStatuses.includes(task.completionStatus)) {
           newCompletionStatus = task.completionStatus;
         } else if (
           oldTask &&
@@ -127,10 +117,14 @@ export const useTaskStore = create<TaskState>()(
           try {
             const user = useAuthStore.getState().user;
             if (!user || !user.uid) throw new Error('User not authenticated');
-            await setDoc(doc(db, 'tasks', uuid), {
-              ...updatedTask,
-              userUid: user.uid,
-            });
+            // Use collection().doc().set() pattern for react-native-firebase
+            await firestore()
+              .collection('tasks')
+              .doc(uuid)
+              .set({
+                ...updatedTask,
+                userUid: user.uid,
+              });
             const { [uuid]: _, ...remainingChanges } = get().pendingChanges;
             set({ pendingChanges: remainingChanges });
           } catch (error) {
@@ -167,10 +161,14 @@ export const useTaskStore = create<TaskState>()(
           try {
             const user = useAuthStore.getState().user;
             if (!user || !user.uid) throw new Error('User not authenticated');
-            await setDoc(doc(db, 'tasks', uuid), {
-              ...softDeletedTask,
-              userUid: user.uid,
-            });
+
+            await firestore()
+              .collection('tasks')
+              .doc(uuid)
+              .set({
+                ...softDeletedTask,
+                userUid: user.uid,
+              });
             const { [uuid]: _, ...remainingChanges } = get().pendingChanges;
             set({ pendingChanges: remainingChanges });
           } catch (error) {
@@ -183,18 +181,19 @@ export const useTaskStore = create<TaskState>()(
         const authenticated = useAuthStore.getState().isAuthenticated;
         const user = useAuthStore.getState().user;
         const netInfo = await NetInfo.fetch();
-        if (!netInfo.isConnected || !authenticated || !user || !user.uid)
-          return;
+        if (!netInfo.isConnected || !authenticated || !user || !user.uid) return;
 
         const { tasks, pendingChanges } = get();
         try {
-          const tasksRef = collection(db, 'tasks');
-          const tasksQuery = query(tasksRef, where('userUid', '==', user.uid));
-          const querySnapshot = await getDocs(tasksQuery);
+          // Use firestore.collection().where() pattern
+          const tasksQuery = firestore().collection('tasks').where('userUid', '==', user.uid);
+          // Use query.get() pattern
+          const querySnapshot = await tasksQuery.get();
           const firebaseTasks: { [key: string]: Task } = {};
 
-          querySnapshot.forEach((docSnap) => {
-            firebaseTasks[docSnap.id] = docSnap.data() as Task;
+          querySnapshot.forEach((docSnap: any) => {
+            // Use docSnap.data() which is already typed in react-native-firebase
+            firebaseTasks[docSnap.id] = docSnap.data() as Task; // Keep cast for safety if needed
           });
 
           const mergedTasks = { ...tasks };
@@ -225,8 +224,7 @@ export const useTaskStore = create<TaskState>()(
             }
 
             mergedTask.status =
-              localTask.status === 'deleted' ||
-              firebaseTask.status === 'deleted'
+              localTask.status === 'deleted' || firebaseTask.status === 'deleted'
                 ? 'deleted'
                 : 'active';
             mergedTask.updatedAt = new Date().toISOString();
@@ -239,10 +237,14 @@ export const useTaskStore = create<TaskState>()(
             const pendingChange = pendingChanges[uuid];
             if (!firebaseTask || pendingChange) {
               try {
-                await setDoc(doc(db, 'tasks', uuid), {
-                  ...localTask,
-                  userUid: user.uid,
-                });
+                // Use collection().doc().set() pattern
+                await firestore()
+                  .collection('tasks')
+                  .doc(uuid)
+                  .set({
+                    ...localTask,
+                    userUid: user.uid,
+                  });
               } catch (error) {
                 console.error('Failed to sync task to Firebase:', error);
               }
@@ -262,29 +264,45 @@ export const useTaskStore = create<TaskState>()(
     {
       name: 'task-storage',
       storage: createJSONStorage(() => zustandStorage),
-    },
-  ),
+    }
+  )
 );
 
-// Real-time listener for tasks
 let unsubscribe: (() => void) | null = null;
-export const setupTasksListener = (userId: string | null) => {
+
+export const setupTasksListener = async (userId: string | null) => {
   if (unsubscribe) {
     unsubscribe();
     unsubscribe = null;
   }
+
   if (userId) {
-    const tasksRef = collection(db, 'tasks');
-    const tasksQuery = query(tasksRef, where('userUid', '==', userId));
-    unsubscribe = onSnapshot(tasksQuery, () => {
-      const store = useTaskStore.getState();
-      if (store.lastSyncTimestamp < Date.now() - 1000) {
-        store.syncWithFirebase();
+    try {
+      if (Platform.OS !== 'web') {
+        unsubscribe = firestore()
+          .collection('tasks')
+          .where('userUid', '==', userId)
+          .onSnapshot(() => {
+            const store = useTaskStore.getState();
+            if (store.lastSyncTimestamp < Date.now() - 1000) {
+              store.syncWithFirebase();
+            }
+          });
+      } else {
+        const tasksRef = collection(db, 'tasks');
+        const tasksQuery = query(tasksRef, where('userUid', '==', userId));
+        unsubscribe = onSnapshot(tasksQuery, () => {
+          const store = useTaskStore.getState();
+          if (store.lastSyncTimestamp < Date.now() - 1000) {
+            store.syncWithFirebase();
+          }
+        });
       }
-    });
+    } catch (error) {
+      console.error('Error setting up tasks listener:', error);
+    }
   }
 };
-
 NetInfo.addEventListener((state) => {
   if (state.isConnected) {
     useTaskStore.getState().syncWithFirebase();

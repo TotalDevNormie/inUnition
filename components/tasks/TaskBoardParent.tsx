@@ -20,27 +20,42 @@ export type TaskBoardContentProps = {
   handleTaskComplete: () => void;
   handleSettingsComplete: () => void;
   handleDragEnd: (task: Task, newStatus: string) => void;
-  taskBoard: ReturnType<typeof useTaskBoardStore>['getTaskBoard'] extends 
-    (uuid: string) => infer R ? R : never;
+  taskBoard: ReturnType<typeof useTaskBoardStore>['getTaskBoard'] extends (uuid: string) => infer R
+    ? R
+    : never;
   tasks: Task[];
 };
 
 export type TaskBoardContent = React.FC<TaskBoardContentProps>;
 
+// Add this to your TaskBoardParent type
 type TaskBoardParentProps = {
   TaskBoardContent: TaskBoardContent;
   propUuid?: string;
+  externalControls?: {
+    handleEditTask: (task: Task) => void;
+    handleAddTask: () => void;
+    handleOpenSettings: () => void;
+    isActive: boolean;
+    taskEdit: false | Task;
+    openModal: 'newTask' | 'settings' | false;
+  };
 };
 
-export const TaskBoardParent = ({ TaskBoardContent, propUuid }: TaskBoardParentProps) => {
+export const TaskBoardParent = ({ 
+  TaskBoardContent, 
+  propUuid, 
+  externalControls 
+}: TaskBoardParentProps) => {
   const [isInvalidUUID, setIsInvalidUUID] = useState(false);
   const [columnRefs, setColumnRefs] = useState<ColumnRefs>({});
+  
+  // Only use internal state if external controls aren't provided
   const [taskEdit, setTaskEdit] = useState<false | Task>(false);
   const [openModal, setOpenModal] = useState<'newTask' | 'settings' | false>(false);
 
   const { getTaskBoard } = useTaskBoardStore();
   const { tasksFromBoard, saveTask } = useTaskStore();
-
 
   const uuid = propUuid || useLocalSearchParams().uuid;
 
@@ -60,19 +75,28 @@ export const TaskBoardParent = ({ TaskBoardContent, propUuid }: TaskBoardParentP
     }));
   }, []);
 
+  // Use internal or external handlers based on what's provided
   const handleEditTask = useCallback((task: Task) => {
-    setTaskEdit(task);
-    setOpenModal('newTask');
-  }, []);
+    if (externalControls) {
+      externalControls.handleEditTask(task);
+    } else {
+      setTaskEdit(task);
+      setOpenModal('newTask');
+    }
+  }, [externalControls]);
 
   const handleTaskComplete = useCallback(() => {
-    setTaskEdit(false);
-    setOpenModal(false);
-  }, []);
+    if (!externalControls) {
+      setTaskEdit(false);
+      setOpenModal(false);
+    }
+  }, [externalControls]);
 
   const handleSettingsComplete = useCallback(() => {
-    setOpenModal(false);
-  }, []);
+    if (!externalControls) {
+      setOpenModal(false);
+    }
+  }, [externalControls]);
 
   const handleDragEnd = useCallback(
     (task: Task, newStatus: string) => {
@@ -86,20 +110,37 @@ export const TaskBoardParent = ({ TaskBoardContent, propUuid }: TaskBoardParentP
     [saveTask]
   );
 
-
   const tasks = tasksFromBoard(uuid as string);
   const taskBoard = getTaskBoard(uuid as string);
+
+  // Use external or internal state values
+  const effectiveTaskEdit = externalControls && externalControls.isActive 
+    ? externalControls.taskEdit 
+    : taskEdit;
+    
+  const effectiveOpenModal = externalControls && externalControls.isActive
+    ? externalControls.openModal
+    : openModal;
+
+  const effectiveSetTaskEdit = externalControls ? () => {} : setTaskEdit;
+  const effectiveSetOpenModal = externalControls 
+    ? (val: 'newTask' | 'settings' | false) => {
+        if (val === 'newTask') externalControls.handleAddTask();
+        else if (val === 'settings') externalControls.handleOpenSettings();
+      }
+    : setOpenModal;
 
   if (isInvalidUUID || !taskBoard) {
     return <Redirect href="./new" />;
   }
+
   return (
     <TaskBoardContent
       uuid={uuid as string}
-      taskEdit={taskEdit}
-      setTaskEdit={setTaskEdit}
-      openModal={openModal}
-      setOpenModal={setOpenModal}
+      taskEdit={effectiveTaskEdit}
+      setTaskEdit={effectiveSetTaskEdit}
+      openModal={effectiveOpenModal}
+      setOpenModal={effectiveSetOpenModal}
       columnRefs={columnRefs}
       updateColumnRef={updateColumnRef}
       handleEditTask={handleEditTask}

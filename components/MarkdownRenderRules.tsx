@@ -1,11 +1,5 @@
 import React from 'react';
-import {
-  Text,
-  TouchableWithoutFeedback,
-  View,
-  Platform,
-  StyleSheet,
-} from 'react-native';
+import { Text, TouchableWithoutFeedback, View, Platform, StyleSheet } from 'react-native';
 import FitImage from 'react-native-fit-image';
 import { Linking } from 'react-native';
 
@@ -61,41 +55,33 @@ const markdownRules = {
 
   // Headings
   heading1: (node, children, parent, styles) => (
-    <View
-      key={node.key}
-      style={styles._VIEW_SAFE_heading3}
-      className="!w-full !flex"
-    >
-      <Text className="pt-5 pb-1 w-full">{children}</Text>
+    <View key={node.key} style={styles._VIEW_SAFE_heading3} className="!flex !w-full">
+      <Text className="w-full pb-1 pt-5">{children} </Text>
     </View>
   ),
   heading2: (node, children, parent, styles) => (
-    <View
-      key={node.key}
-      style={styles._VIEW_SAFE_heading2}
-      className="!w-full !flex"
-    >
-      <Text className="pt-4 pb-1 w-full">{children}</Text>
+    <View key={node.key} style={styles._VIEW_SAFE_heading2} className="!flex !w-full">
+      <Text className="w-full pb-1 pt-4">{children} </Text>
     </View>
   ),
   heading3: (node, children, parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_heading3}>
-      <Text className="pt-4 pb-1 w-full ">{children}</Text>
+      <Text className="w-full pb-1 pt-4 ">{children} </Text>
     </View>
   ),
   heading4: (node, children, parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_heading4}>
-      <Text className="pt-3 pb-1 w-full">{children}</Text>
+      <Text className="w-full pb-1 pt-3">{children} </Text>
     </View>
   ),
   heading5: (node, children, parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_heading5}>
-      <Text className="pt-2 pb-1 w-full">{children}</Text>
+      <Text className="w-full pb-1 pt-2">{children} </Text>
     </View>
   ),
   heading6: (node, children, parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_heading6}>
-      <Text className="pt-1 pb-1 w-full">{children}</Text>
+      <Text className="w-full pb-1 pt-1">{children} </Text>
     </View>
   ),
 
@@ -104,24 +90,24 @@ const markdownRules = {
     <View
       key={node.key}
       style={{ ...styles._VIEW_SAFE_hr, backgroundColor: '#313749' }}
-      className="!h-[2px] !bg-secondary rounded-xl"
+      className="!h-[2px] rounded-xl !bg-secondary"
     />
   ),
 
   // Emphasis
   strong: (node, children, parent, styles) => (
     <Text key={node.key} style={styles.strong}>
-      {children}
+      {children}{' '}
     </Text>
   ),
   em: (node, children, parent, styles) => (
     <Text key={node.key} style={styles.em}>
-      {children}
+      {children}{' '}
     </Text>
   ),
   s: (node, children, parent, styles) => (
     <Text key={node.key} style={styles.s}>
-      {children}
+      {children}{' '}
     </Text>
   ),
 
@@ -130,8 +116,7 @@ const markdownRules = {
     <View
       key={node.key}
       style={styles._VIEW_SAFE_blockquote}
-      className="!border-accent !bg-background w-full"
-    >
+      className="w-full !border-accent !bg-background">
       {children}
     </View>
   ),
@@ -177,13 +162,12 @@ const markdownRules = {
           <Text
             style={[modifiedInheritedStylesObj, styles.bullet_list_icon]}
             accessible={false}
-            className="!text-text"
-          >
+            className="!text-text">
             {Platform.select({
               android: '\u2022',
               ios: '\u00B7',
               default: '\u2022',
-            })}
+            })}{' '}
           </Text>
           <View style={styles._VIEW_SAFE_bullet_list_content}>{children}</View>
         </View>
@@ -191,9 +175,7 @@ const markdownRules = {
     }
 
     if (hasParents(parent, 'ordered_list')) {
-      const orderedListIndex = parent.findIndex(
-        (el) => el.type === 'ordered_list',
-      );
+      const orderedListIndex = parent.findIndex((el) => el.type === 'ordered_list');
 
       const orderedList = parent[orderedListIndex];
       let listItemNumber;
@@ -208,10 +190,9 @@ const markdownRules = {
         <View key={node.key} style={styles._VIEW_SAFE_list_item}>
           <Text
             style={[modifiedInheritedStylesObj, styles.ordered_list_icon]}
-            className="!text-text"
-          >
+            className="!text-text">
             {listItemNumber}
-            {node.markup}
+            {node.markup}{' '}
           </Text>
           <View style={styles._VIEW_SAFE_ordered_list_content}>{children}</View>
         </View>
@@ -231,19 +212,15 @@ const markdownRules = {
     <Text
       key={node.key}
       style={[inheritedStyles, styles.code_inline]}
-      className="!bg-secondary !p-1 !border-0 !rounded-lg text-text"
-    >
-      {node.content}
+      className="!rounded-lg !border-0 !bg-secondary !p-1 text-text">
+      {node.content}{' '}
     </Text>
   ),
   code_block: (node, children, parent, styles, inheritedStyles = {}) => {
     // we trim new lines off the end of code blocks because the parser sends an extra one.
     let { content } = node;
 
-    if (
-      typeof node.content === 'string' &&
-      node.content.charAt(node.content.length - 1) === '\n'
-    ) {
+    if (typeof node.content === 'string' && node.content.charAt(node.content.length - 1) === '\n') {
       content = node.content.substring(0, node.content.length - 1);
     }
 
@@ -251,9 +228,8 @@ const markdownRules = {
       <Text
         key={node.key}
         style={[inheritedStyles, styles.code_block]}
-        className="!bg-secondary !p-2 !border-0 text-text !rounded-lg"
-      >
-        {content}
+        className="!rounded-lg !border-0 !bg-secondary !p-2 text-text">
+        {content}{' '}
       </Text>
     );
   },
@@ -261,16 +237,13 @@ const markdownRules = {
     // we trim new lines off the end of code blocks because the parser sends an extra one.
     let { content } = node;
 
-    if (
-      typeof node.content === 'string' &&
-      node.content.charAt(node.content.length - 1) === '\n'
-    ) {
+    if (typeof node.content === 'string' && node.content.charAt(node.content.length - 1) === '\n') {
       content = node.content.substring(0, node.content.length - 1);
     }
 
     return (
       <Text key={node.key} style={[inheritedStyles, styles.fence]}>
-        {content}
+        {content}{' '}
       </Text>
     );
   },
@@ -280,8 +253,7 @@ const markdownRules = {
     <View
       key={node.key}
       style={{ ...styles._VIEW_SAFE_table }}
-      className="!border-secondary !border-2 !rounded-lg"
-    >
+      className="!rounded-lg !border-2 !border-secondary">
       {children}
     </View>
   ),
@@ -301,11 +273,7 @@ const markdownRules = {
     </View>
   ),
   tr: (node, children, parent, styles) => (
-    <View
-      key={node.key}
-      style={styles._VIEW_SAFE_tr}
-      className="!border-secondary !roundend-lg"
-    >
+    <View key={node.key} style={styles._VIEW_SAFE_tr} className="!roundend-lg !border-secondary">
       {children}
     </View>
   ),
@@ -320,30 +288,21 @@ const markdownRules = {
     <Text
       key={node.key}
       style={styles.link}
-      onPress={() => openUrl(node.attributes.href, onLinkPress)}
-    >
-      {children}
+      onPress={() => openUrl(node.attributes.href, onLinkPress)}>
+      {children}{' '}
     </Text>
   ),
   blocklink: (node, children, parent, styles, onLinkPress) => (
     <TouchableWithoutFeedback
       key={node.key}
       onPress={() => openUrl(node.attributes.href, onLinkPress)}
-      style={styles.blocklink}
-    >
+      style={styles.blocklink}>
       <View style={styles.image}>{children}</View>
     </TouchableWithoutFeedback>
   ),
 
   // Images
-  image: (
-    node,
-    children,
-    parent,
-    styles,
-    allowedImageHandlers,
-    defaultImageHandler,
-  ) => {
+  image: (node, children, parent, styles, allowedImageHandlers, defaultImageHandler) => {
     const { src, alt } = node.attributes;
 
     // we check that the source starts with at least one of the elements in allowedImageHandlers
@@ -373,7 +332,7 @@ const markdownRules = {
     }
 
     return (
-      <View className="flex grow h-80 flex-row" key={node.key}>
+      <View className="flex h-80 grow flex-row" key={node.key}>
         <FitImage {...imageProps} />
       </View>
     );
@@ -384,29 +343,28 @@ const markdownRules = {
     <Text
       key={node.key}
       style={[inheritedStyles, styles.text]}
-      className="text-text text-base w-full"
-    >
-      {node.content}
+      className="w-full text-base text-text">
+      {node.content}{' '}
     </Text>
   ),
   textgroup: (node, children, parent, styles) => (
     <Text key={node.key} style={styles.textgroup}>
-      {children}
+      {children}{' '}
     </Text>
   ),
   paragraph: (node, children, parent, styles) => (
     <View key={node.key} style={styles._VIEW_SAFE_paragraph} className="w-full">
-      <Text>{children}</Text>
+      <Text>{children} </Text>
     </View>
   ),
   hardbreak: (node, children, parent, styles) => (
     <Text key={node.key} style={styles.hardbreak}>
-      {'\n'}
+      {'\n'}{' '}
     </Text>
   ),
   softbreak: (node, children, parent, styles) => (
     <Text key={node.key} style={styles.softbreak}>
-      {'\n'}
+      {'\n'}{' '}
     </Text>
   ),
 
@@ -418,12 +376,12 @@ const markdownRules = {
   ),
   inline: (node, children, parent, styles) => (
     <Text key={node.key} style={styles.inline}>
-      {children}
+      {children}{' '}
     </Text>
   ),
   span: (node, children, parent, styles) => (
     <Text key={node.key} style={styles.span}>
-      {children}
+      {children}{' '}
     </Text>
   ),
 };

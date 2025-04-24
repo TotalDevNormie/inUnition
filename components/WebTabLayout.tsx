@@ -9,10 +9,12 @@ import { useSidebarStore } from '../utils/useSidebarStore';
 import SearchPopup from './WebSearchPopup';
 import { useEffect, useState } from 'react';
 import { router } from 'expo-router';
+import { useSearchStore } from '../utils/useSearchStore';
 
 export default function WebTabLayout() {
   // Use the Zustand store for collapsed state
   const { isCollapsed, toggleCollapsed, setCollapsed } = useSidebarStore();
+  const { setSearchTerm, search } = useSearchStore();
 
   const { width } = useWindowDimensions();
   const isMobile = width < 768;
@@ -46,25 +48,26 @@ export default function WebTabLayout() {
 
   return (
     <Navigator router={TabRouter}>
-      <View className="h-full flex-row overflow-hidden bg-background p-4 color-current">
+      <View
+        className={`h-full ${isMobile ? 'flex-col' : 'flex-row'} overflow-hidden bg-background p-4 color-current`}>
         {isMobile && !isSidebarOpen && (
-          <Pressable
-            onPress={toggleSidebar}
-            className="absolute left-6 top-6 z-50 rounded-full bg-secondary-850 p-2">
-            <Ionicons name="menu" size={24} className="color-text" />
-          </Pressable>
+          <View className="flex flex-row items-center justify-between px-4 pb-4">
+            <Pressable
+              onPress={toggleSidebar}
+              className="z-50 h-10 w-10 rounded-full bg-secondary-850 p-2">
+              <Ionicons name="menu" size={24} className="color-text" />
+            </Pressable>
+
+            <DarkLogoFull />
+          </View>
         )}
 
         {(!isMobile || isSidebarOpen) && (
-          <Sidebar
-            collapsed={isCollapsed} // Use the store's state
-            toggleSidebar={toggleSidebar}
-            isMobile={isMobile}
-          />
+          <Sidebar collapsed={isCollapsed} toggleSidebar={toggleSidebar} isMobile={isMobile} />
         )}
 
         <ScrollView
-          className={`specific-issue flex-1 rounded-lg p-4 ${!isMobile || !isSidebarOpen ? 'ml-4' : ''}`}
+          className={`specific-issue flex-1 rounded-lg p-4`}
           contentContainerStyle={{ flexGrow: 1 }}>
           <Slot />
         </ScrollView>
@@ -83,10 +86,15 @@ const Sidebar = ({
   isMobile: boolean;
 }) => {
   const { isLoading, user } = useAuthStore();
+  const { setSearchTerm, search } = useSearchStore();
   const pathname = usePathname();
 
   // Function to trigger search shortcut
   const triggerSearch = () => {
+    // Reset search term and perform a fresh search
+    setSearchTerm('');
+    search();
+
     const event = new KeyboardEvent('keydown', {
       key: 'k',
       ctrlKey: true,
@@ -97,7 +105,7 @@ const Sidebar = ({
 
   return (
     <View
-      className={`flex h-full justify-between overflow-hidden rounded-xl bg-secondary-850 p-4 align-middle ${
+      className={`flex h-full justify-between overflow-hidden ${!isMobile ? 'rounded-xl' : ''} bg-secondary-850 p-4 align-middle ${
         collapsed ? 'w-[4.5rem]' : isMobile ? 'w-54 absolute left-0 top-0 z-40 h-full' : 'w-[15rem]'
       }`}
       style={{
@@ -130,7 +138,7 @@ const Sidebar = ({
           <Ionicons name="search" size={20} className="color-text" />
           {!collapsed && (
             <Text className="flex-1 text-text" numberOfLines={1}>
-              Search
+              Search{' '}
             </Text>
           )}
         </Pressable>
@@ -162,6 +170,7 @@ const Sidebar = ({
         <Hr />
       </View>
       <View>
+        <Hr />
         {user && (
           <>
             <NavLink
@@ -178,7 +187,7 @@ const Sidebar = ({
               <Ionicons name="log-out-outline" size={20} className="text-red-500" />
               {!collapsed && (
                 <Text className="text-red-500" numberOfLines={1}>
-                  Log out
+                  Log out{' '}
                 </Text>
               )}
             </Pressable>
@@ -192,7 +201,7 @@ const Sidebar = ({
             <Ionicons name="log-in-outline" size={20} className="text-primary" />
             {!collapsed && (
               <Text className="text-primary" numberOfLines={1}>
-                Log in
+                Log in{' '}
               </Text>
             )}
           </Pressable>

@@ -1,17 +1,18 @@
 import '../globalPolyfills';
-import { Stack, useRouter } from 'expo-router';
+import { Slot, Stack, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { MMKV } from 'react-native-mmkv';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as NavigationBar from 'expo-navigation-bar';
 import { MD3DarkTheme, Provider as PaperProvider } from 'react-native-paper';
+import 'expo-dev-client';
 
 import '../global.css';
 import { useAuthStore } from '../utils/useAuthStore';
-import { SearchProvider } from '../utils/SearchContext';
 import { setupTasksListener } from '../utils/manageTasks';
 import { setupTaskBoardsListener } from '../utils/manageTaskBoards';
 import { setupNotesListener } from '../utils/manageNotes';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 
 const theme = {
   ...MD3DarkTheme,
@@ -69,21 +70,12 @@ export default function Layout() {
   }, []);
 
   return (
-    <SearchProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <SafeAreaProvider>
         <PaperProvider theme={theme}>
-          <Stack
-            screenOptions={{
-              headerShown: false,
-            }}
-          >
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="(auth)" />
-            <Stack.Screen name="note" />
-            <Stack.Screen name="landing" />
-          </Stack>
+          <Slot />
         </PaperProvider>
-      </GestureHandlerRootView>
-    </SearchProvider>
+      </SafeAreaProvider>
+    </GestureHandlerRootView>
   );
 }

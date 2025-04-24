@@ -1,13 +1,13 @@
-import { Slot } from "expo-router";
-import { ScrollView, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { Slot } from 'expo-router';
+import { ScrollView, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ClusterLayout() {
   return (
     <View className="bg-background">
       <SafeAreaView>
-        <View className="bg-background flex-col h-screen flex gap-2">
-          <View className="flex-1 self-stretch rounded-lg py-4 bg-background-850 *:grow *-bg-sky-100">
+        <View className="flex h-screen flex-col gap-2 bg-background px-4">
+          <View className="bg-background-850 *-bg-sky-100 flex-1 self-stretch rounded-lg py-4 *:grow">
             <Slot />
           </View>
         </View>

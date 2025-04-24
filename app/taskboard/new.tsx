@@ -31,7 +31,7 @@ const ListItem = ({
   return (
     <View className="mb-2 flex flex-row gap-2 rounded-xl bg-secondary-850 p-2">
       <Text className="text-text" {...dragHandleProps}>
-        <MaterialCommunityIcons name="dots-grid" size={24} />
+        <MaterialCommunityIcons name="dots-grid" size={24} />{' '}
       </Text>
       {editing === item ? (
         <TextInput
@@ -42,16 +42,16 @@ const ListItem = ({
           onChangeText={(text) => handleEditingStatusChange(text)}
         />
       ) : (
-        <Text className="grow text-center text-text">{item}</Text>
+        <Text className="grow text-center text-text">{item} </Text>
       )}
       <Pressable onPress={() => handleEditing(item)}>
         <Text className="text-text">
-          <AntDesign name={editing === item ? 'check' : 'edit'} size={24} />
+          <AntDesign name={editing === item ? 'check' : 'edit'} size={24} />{' '}
         </Text>
       </Pressable>
       <Pressable onPress={() => deleteStatus(item)}>
         <Text className="text-text">
-          <AntDesign name="close" size={24} />
+          <AntDesign name="close" size={24} />{' '}
         </Text>
       </Pressable>
     </View>
@@ -95,7 +95,7 @@ export default function Task() {
         tags,
       });
       console.log(uuid);
-      router.push(`/taskboard/${uuid}`);
+      router.replace(`/taskboard/${uuid}`);
     } catch (error) {
       console.error('Failed to create task board:', error);
     }
@@ -138,10 +138,9 @@ export default function Task() {
   };
 
   const handleEditingStatusChange = (text: string) => {
-    setEditingStatus(text);
+    setEditingStatus(text.slice(0, 25));
   };
 
-  // Reset to default status types from settings
   const resetToDefaults = () => {
     setStatusTypes([...defaultStatusTypes]);
     setEditing(false);
@@ -150,7 +149,16 @@ export default function Task() {
 
   return (
     <GestureHandlerRootView>
-      <ScrollView className="mx-auto flex w-full max-w-[50rem] flex-col gap-8">
+      <ScrollView className="mx-auto flex w-full max-w-[50rem] flex-col gap-8 px-4 py-8">
+        {Platform.OS !== 'web' && (
+          <View className="flex flex-row justify-between pb-8">
+            <Pressable onPress={() => router.back()}>
+              <Text className="text-text">
+                <AntDesign name="arrowleft" size={24} />{' '}
+              </Text>
+            </Pressable>
+          </View>
+        )}
         <View className="mb-4 flex flex-col gap-2">
           <Text className="text-text">Name: </Text>
           <TextInput
@@ -178,7 +186,7 @@ export default function Task() {
           <View className="flex flex-row items-center justify-between">
             <Text className="text-text">Completion statuses: </Text>
             <Pressable onPress={resetToDefaults} className="rounded-lg bg-secondary/50 px-3 py-1">
-              <Text className="text-sm text-text">Reset to defaults</Text>
+              <Text className="text-sm text-text">Reset to defaults </Text>
             </Pressable>
           </View>
 
@@ -186,12 +194,12 @@ export default function Task() {
             <TextInput
               className="grow rounded-lg bg-secondary-850 p-2 text-text"
               value={newStatus}
-              onChangeText={setNewStatus}
+              onChangeText={(status) => setNewStatus(status.slice(0, 25))}
               placeholder="Add new status"
               placeholderTextColor="#666"
             />
             <Pressable className="rounded-lg bg-accent p-2" onPress={handleNewStatus}>
-              <Text className="text-background">Add</Text>
+              <Text className="text-background">Add </Text>
             </Pressable>
           </View>
 
@@ -242,14 +250,14 @@ export default function Task() {
           </View>
 
           <Text className="mt-1 text-xs text-text/60">
-            Drag to reorder. You can have up to 5 status types.
+            Drag to reorder. You can have up to 5 status types.{' '}
           </Text>
         </View>
 
         <TagsInput tags={tags} setTags={setTags} />
 
         <Pressable onPress={handleSubmit} className="mb-8 rounded-lg bg-primary p-3 text-center">
-          <Text className="text-center font-medium text-background">Create Task Board</Text>
+          <Text className="text-center font-medium text-background">Create Task Board </Text>
         </Pressable>
       </ScrollView>
     </GestureHandlerRootView>

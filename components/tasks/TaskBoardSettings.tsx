@@ -65,13 +65,13 @@ export default function TaskBoardSettingsContent({
       uuid: boardUuid,
       name,
     });
-  }
+  };
   const handleDescriptionChange = () => {
     saveTaskBoard({
       uuid: boardUuid,
       description,
     });
-  }
+  };
 
   const TextInputComponent = inBottomSheet ? BottomSheetTextInput : TextInput;
 
@@ -79,14 +79,14 @@ export default function TaskBoardSettingsContent({
     <View className="flex flex-col gap-4 p-8 pb-10">
       <View className="mb-2 flex flex-row gap-2">
         <Pressable onPress={handleDeleteBoard} className="flex-1 rounded-xl bg-red-500 p-2">
-          <Text className="text-center text-text">Delete Task Board</Text>
+          <Text className="text-center text-text">Delete Task Board </Text>
         </Pressable>
         <Pressable onPress={handleNewBoard} className="flex-1 rounded-xl bg-accent p-2">
-          <Text className="text-center text-background">New Task Board</Text>
+          <Text className="text-center text-background">New Task Board </Text>
         </Pressable>
       </View>
 
-      <Text className="text-text">Board name:</Text>
+      <Text className="text-text">Board name: </Text>
       <TextInputComponent
         value={name}
         onChangeText={setName}
@@ -94,7 +94,7 @@ export default function TaskBoardSettingsContent({
         className="rounded-xl bg-secondary-850 p-2 text-text"
       />
 
-      <Text className="text-text">Description:</Text>
+      <Text className="text-text">Description: </Text>
       <TextInputComponent
         value={description}
         onChangeText={setDescription}

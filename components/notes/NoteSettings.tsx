@@ -12,15 +12,14 @@ type Props = {
 };
 
 export default function NoteSettings({ uuid }: Props) {
-  const { deleteNote, saveNote, notes} = useNoteStore();
+  const { deleteNote, saveNote, notes } = useNoteStore();
   const [tags, setTags] = useState<string[]>([]);
   const [dueDate, setDueDate] = useState('');
 
-const isFirstRender = useRef(true);
+  const isFirstRender = useRef(true);
 
   useEffect(() => {
     if (isFirstRender.current) {
-
       setTags(notes[uuid]?.tags || []);
       setDueDate(notes[uuid]?.endsAt || '');
       isFirstRender.current = false;
@@ -33,7 +32,7 @@ const isFirstRender = useRef(true);
   const handleDelete = () => {
     deleteNote(uuid);
     router.back();
-  }
+  };
 
   return (
     <View className="flex flex-col gap-4 p-8 pb-10">
@@ -44,7 +43,7 @@ const isFirstRender = useRef(true);
         <Pressable
           onPress={() => router.push(`/note/${v4()}`)}
           className="flex-1 rounded-xl bg-accent p-2">
-          <Text className="text-center text-background">New Note</Text>
+          <Text className="text-center text-background">New Note </Text>
         </Pressable>
       </View>
       <TagsInput tags={tags} setTags={setTags} />
@@ -53,7 +52,7 @@ const isFirstRender = useRef(true);
       <Pressable
         className="rounded-xl bg-primary p-2 "
         onPress={() => saveNote({ uuid, tags, endsAt: dueDate })}>
-        <Text className="text-center text-background">Save</Text>
+        <Text className="text-center text-background">Save </Text>
       </Pressable>
     </View>
   );
