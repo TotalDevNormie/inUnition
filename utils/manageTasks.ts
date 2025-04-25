@@ -1,19 +1,13 @@
-import NetInfo from '@react-native-community/netinfo';
-import { MMKV } from 'react-native-mmkv';
-import { create } from 'zustand';
-import { persist, createJSONStorage } from 'zustand/middleware';
+import NetInfo from "@react-native-community/netinfo";
+import "react-native-get-random-values";
+import { v4 as uuidv4 } from "uuid";
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { MMKV } from "react-native-mmkv";
 
-import { useTaskBoardStore } from './manageTaskBoards';
-import { useAuthStore } from './useAuthStore';
-
-import 'react-native-get-random-values';
-import { v4 as uuidv4 } from 'uuid';
-
-import { db } from '../firebaseConfig';
-
-import firestore from '@react-native-firebase/firestore';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import { Platform } from 'react-native';
+import { useTaskBoardStore } from "./manageTaskBoards";
+import { useAuthStore } from "./useAuthStore";
+import { setDoc, fetchAll, listen } from "../firestoreAdapter";
 
 export type Task = {
   uuid: string;
@@ -24,33 +18,34 @@ export type Task = {
   updatedAt: string;
   endsAt: string;
   completionStatus: string;
-  status: 'active' | 'deleted';
+  status: "active" | "deleted";
   tags: string[];
 };
 
 const storage = new MMKV();
+const COLLECTION = "tasks";
 
 const zustandStorage = {
-  getItem: (name: string) => {
-    const value = storage.getString(name);
-    return value ? JSON.parse(value) : null;
+  getItem: (key: string) => {
+    const v = storage.getString(key);
+    return v ? JSON.parse(v) : null;
   },
-  setItem: (name: string, value: any) => {
-    storage.set(name, JSON.stringify(value));
+  setItem: (key: string, val: any) => {
+    storage.set(key, JSON.stringify(val));
   },
-  removeItem: (name: string) => {
-    storage.delete(name);
+  removeItem: (key: string) => {
+    storage.delete(key);
   },
 };
 
 interface TaskState {
-  tasks: { [key: string]: Task };
-  pendingChanges: { [key: string]: { timestamp: number } };
+  tasks: Record<string, Task>;
+  pending: Record<string, { timestamp: number }>;
+  lastSync: number;
   activeTasksArray: () => Task[];
-  lastSyncTimestamp: number;
   tasksFromBoard: (boardUUID: string) => Task[];
   getTask: (uuid: string) => Task | undefined;
-  saveTask: (taskBoardUUID: string, task: Partial<Task>) => Promise<void>;
+  saveTask: (boardUUID: string, t: Partial<Task>) => Promise<void>;
   deleteTask: (uuid: string) => Promise<void>;
   syncWithFirebase: () => Promise<void>;
 }
@@ -59,256 +54,147 @@ export const useTaskStore = create<TaskState>()(
   persist(
     (set, get) => ({
       tasks: {},
-      pendingChanges: {},
-      lastSyncTimestamp: Date.now(),
+      pending: {},
+      lastSync: Date.now(),
+
+      activeTasksArray: () =>
+        Object.values(get().tasks).filter((t) => t.status === "active"),
+
       tasksFromBoard: (boardUUID) =>
         Object.values(get().tasks).filter(
-          ({ taskBoardUUID, status }) => taskBoardUUID === boardUUID && status === 'active'
+          (t) => t.taskBoardUUID === boardUUID && t.status === "active"
         ),
+
       getTask: (uuid) => get().tasks[uuid],
-      activeTasksArray: () =>
-        Object.values(get().tasks).filter(({ status }) => status === 'active'),
-      saveTask: async (taskBoardUUID, task) => {
+
+      saveTask: async (boardUUID, task) => {
         const uuid = task.uuid || uuidv4();
-        const board = useTaskBoardStore.getState().taskBoards[taskBoardUUID];
-        const timestamp = Date.now();
-        const currentTasks = get().tasks;
-        const pendingChanges = get().pendingChanges;
-        const oldTask = currentTasks[uuid];
+        const board = useTaskBoardStore.getState().taskBoards[boardUUID];
+        if (!board) throw new Error("Board not found");
 
-        if (!board) throw new Error('Task board not found');
+        const statuses = board.statusTypes || [];
+        if (statuses.length === 0) throw new Error("No completion statuses");
 
-        const completionStatuses = board.statusTypes;
-        if (!completionStatuses || completionStatuses.length === 0)
-          throw new Error('No completion statuses found');
+        const old = get().tasks[uuid];
+        const cs = task.completionStatus && statuses.includes(task.completionStatus)
+          ? task.completionStatus
+          : old?.completionStatus && statuses.includes(old.completionStatus)
+          ? old.completionStatus
+          : statuses[0];
 
-        let newCompletionStatus: string;
-        if (task.completionStatus && completionStatuses.includes(task.completionStatus)) {
-          newCompletionStatus = task.completionStatus;
-        } else if (
-          oldTask &&
-          oldTask.completionStatus &&
-          completionStatuses.includes(oldTask.completionStatus)
-        ) {
-          newCompletionStatus = oldTask.completionStatus;
-        } else {
-          newCompletionStatus = completionStatuses[0];
-        }
-
-        const updatedTask: Task = {
-          ...oldTask,
+        const now = new Date().toISOString();
+        const updated: Task = {
+          ...old,
           ...task,
-          taskBoardUUID,
-          completionStatus: newCompletionStatus,
-          status: 'active',
           uuid,
-          updatedAt: new Date().toISOString(),
-          createdAt: oldTask?.createdAt || new Date().toISOString(),
+          taskBoardUUID: boardUUID,
+          completionStatus: cs,
+          status: "active",
+          createdAt: old?.createdAt || now,
+          updatedAt: now,
         };
 
+        const ts = Date.now();
         set({
-          tasks: { ...currentTasks, [uuid]: updatedTask },
-          pendingChanges: {
-            ...pendingChanges,
-            [uuid]: { timestamp },
-          },
+          tasks: { ...get().tasks, [uuid]: updated },
+          pending: { ...get().pending, [uuid]: { timestamp: ts } },
         });
 
-        const netInfo = await NetInfo.fetch();
-        const authenticated = useAuthStore.getState().isAuthenticated;
-
-        if (netInfo.isConnected && authenticated) {
-          try {
-            const user = useAuthStore.getState().user;
-            if (!user || !user.uid) throw new Error('User not authenticated');
-            // Use collection().doc().set() pattern for react-native-firebase
-            await firestore()
-              .collection('tasks')
-              .doc(uuid)
-              .set({
-                ...updatedTask,
-                userUid: user.uid,
-              });
-            const { [uuid]: _, ...remainingChanges } = get().pendingChanges;
-            set({ pendingChanges: remainingChanges });
-          } catch (error) {
-            console.error('Failed to sync with Firebase:', error);
-          }
+        const net = await NetInfo.fetch();
+        if (net.isConnected && useAuthStore.getState().isAuthenticated) {
+          const user = useAuthStore.getState().user!;
+          await setDoc(COLLECTION, uuid, { ...updated, userUid: user.uid });
+          const { [uuid]: _, ...rest } = get().pending;
+          set({ pending: rest });
         }
       },
 
-      deleteTask: async (uuid: string) => {
-        const timestamp = Date.now();
-        const currentTasks = get().tasks;
-        const pendingChanges = get().pendingChanges;
+      deleteTask: async (uuid) => {
+        const old = get().tasks[uuid];
+        if (!old) return;
 
-        if (!currentTasks[uuid]) return;
+        const now = new Date().toISOString();
+        const soft: Task = { ...old, status: "deleted", updatedAt: now };
 
-        const softDeletedTask: Task = {
-          ...currentTasks[uuid],
-          status: 'deleted',
-          updatedAt: new Date().toISOString(),
-        };
-
+        const ts = Date.now();
         set({
-          tasks: { ...currentTasks, [uuid]: softDeletedTask },
-          pendingChanges: {
-            ...pendingChanges,
-            [uuid]: { timestamp },
-          },
+          tasks: { ...get().tasks, [uuid]: soft },
+          pending: { ...get().pending, [uuid]: { timestamp: ts } },
         });
 
-        const netInfo = await NetInfo.fetch();
-        const authenticated = useAuthStore.getState().isAuthenticated;
-
-        if (netInfo.isConnected && authenticated) {
-          try {
-            const user = useAuthStore.getState().user;
-            if (!user || !user.uid) throw new Error('User not authenticated');
-
-            await firestore()
-              .collection('tasks')
-              .doc(uuid)
-              .set({
-                ...softDeletedTask,
-                userUid: user.uid,
-              });
-            const { [uuid]: _, ...remainingChanges } = get().pendingChanges;
-            set({ pendingChanges: remainingChanges });
-          } catch (error) {
-            console.error('Failed to sync deletion with Firebase:', error);
-          }
+        const net = await NetInfo.fetch();
+        if (net.isConnected && useAuthStore.getState().isAuthenticated) {
+          const user = useAuthStore.getState().user!;
+          await setDoc(COLLECTION, uuid, { ...soft, userUid: user.uid });
+          const { [uuid]: _, ...rest } = get().pending;
+          set({ pending: rest });
         }
       },
 
       syncWithFirebase: async () => {
-        const authenticated = useAuthStore.getState().isAuthenticated;
-        const user = useAuthStore.getState().user;
-        const netInfo = await NetInfo.fetch();
-        if (!netInfo.isConnected || !authenticated || !user || !user.uid) return;
+        if (!useAuthStore.getState().isAuthenticated) return;
+        const user = useAuthStore.getState().user!;
+        const net = await NetInfo.fetch();
+        if (!net.isConnected) return;
 
-        const { tasks, pendingChanges } = get();
-        try {
-          // Use firestore.collection().where() pattern
-          const tasksQuery = firestore().collection('tasks').where('userUid', '==', user.uid);
-          // Use query.get() pattern
-          const querySnapshot = await tasksQuery.get();
-          const firebaseTasks: { [key: string]: Task } = {};
+        const { tasks, pending } = get();
+        const snap = await fetchAll(COLLECTION, user.uid);
+        const remote: Record<string, Task> = {};
+        snap.forEach((doc) => {
+          remote[doc.id] = doc.data() as Task;
+        });
 
-          querySnapshot.forEach((docSnap: any) => {
-            // Use docSnap.data() which is already typed in react-native-firebase
-            firebaseTasks[docSnap.id] = docSnap.data() as Task; // Keep cast for safety if needed
-          });
-
-          const mergedTasks = { ...tasks };
-
-          for (const [uuid, firebaseTask] of Object.entries(firebaseTasks)) {
-            const localTask = tasks[uuid];
-            if (!localTask) {
-              mergedTasks[uuid] = firebaseTask;
-              continue;
-            }
-
-            const pendingChange = pendingChanges[uuid];
-            if (pendingChange && localTask.status === 'deleted') {
-              mergedTasks[uuid] = localTask;
-              continue;
-            }
-
-            const mergedTask = { ...localTask };
-
-            if (firebaseTask.updatedAt && localTask.updatedAt) {
-              const localTime = new Date(localTask.updatedAt).getTime();
-              const remoteTime = new Date(firebaseTask.updatedAt).getTime();
-              if (remoteTime > localTime) {
-                Object.assign(mergedTask, firebaseTask);
-              }
-            } else if (firebaseTask.updatedAt) {
-              Object.assign(mergedTask, firebaseTask);
-            }
-
-            mergedTask.status =
-              localTask.status === 'deleted' || firebaseTask.status === 'deleted'
-                ? 'deleted'
-                : 'active';
-            mergedTask.updatedAt = new Date().toISOString();
-
-            mergedTasks[uuid] = mergedTask;
+        const merged = { ...tasks };
+        for (const [id, r] of Object.entries(remote)) {
+          const l = tasks[id];
+          if (!l) {
+            merged[id] = r;
+            continue;
           }
-
-          for (const [uuid, localTask] of Object.entries(tasks)) {
-            const firebaseTask = firebaseTasks[uuid];
-            const pendingChange = pendingChanges[uuid];
-            if (!firebaseTask || pendingChange) {
-              try {
-                // Use collection().doc().set() pattern
-                await firestore()
-                  .collection('tasks')
-                  .doc(uuid)
-                  .set({
-                    ...localTask,
-                    userUid: user.uid,
-                  });
-              } catch (error) {
-                console.error('Failed to sync task to Firebase:', error);
-              }
-            }
+          if (pending[id] && l.status === "deleted") {
+            merged[id] = l;
+            continue;
           }
-
-          set({
-            tasks: mergedTasks,
-            pendingChanges: {},
-            lastSyncTimestamp: Date.now(),
-          });
-        } catch (error) {
-          console.error('Failed to sync with Firebase:', error);
+          const m = { ...l };
+          if (r.updatedAt && new Date(r.updatedAt) > new Date(l.updatedAt)) {
+            Object.assign(m, r);
+          }
+          m.status = l.status === "deleted" || r.status === "deleted" ? "deleted" : "active";
+          merged[id] = m;
         }
+        for (const [id, l] of Object.entries(tasks)) {
+          if (!remote[id] || pending[id]) {
+            await setDoc(COLLECTION, id, { ...l, userUid: user.uid });
+          }
+        }
+
+        set({ tasks: merged, pending: {}, lastSync: Date.now() });
       },
     }),
     {
-      name: 'task-storage',
+      name: "task-storage",
       storage: createJSONStorage(() => zustandStorage),
     }
   )
 );
 
 let unsubscribe: (() => void) | null = null;
-
-export const setupTasksListener = async (userId: string | null) => {
+export const setupTasksListener = (userId: string | null) => {
   if (unsubscribe) {
     unsubscribe();
     unsubscribe = null;
   }
-
-  if (userId) {
-    try {
-      if (Platform.OS !== 'web') {
-        unsubscribe = firestore()
-          .collection('tasks')
-          .where('userUid', '==', userId)
-          .onSnapshot(() => {
-            const store = useTaskStore.getState();
-            if (store.lastSyncTimestamp < Date.now() - 1000) {
-              store.syncWithFirebase();
-            }
-          });
-      } else {
-        const tasksRef = collection(db, 'tasks');
-        const tasksQuery = query(tasksRef, where('userUid', '==', userId));
-        unsubscribe = onSnapshot(tasksQuery, () => {
-          const store = useTaskStore.getState();
-          if (store.lastSyncTimestamp < Date.now() - 1000) {
-            store.syncWithFirebase();
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error setting up tasks listener:', error);
+  if (!userId) return;
+  unsubscribe = listen(COLLECTION, userId, () => {
+    const s = useTaskStore.getState();
+    if (Date.now() - s.lastSync > 1000) {
+      s.syncWithFirebase();
     }
-  }
+  });
 };
-NetInfo.addEventListener((state) => {
-  if (state.isConnected) {
+
+NetInfo.addEventListener((st) => {
+  if (st.isConnected) {
     useTaskStore.getState().syncWithFirebase();
   }
 });
