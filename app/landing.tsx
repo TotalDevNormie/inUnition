@@ -1,8 +1,9 @@
-import { Platform, Text, View } from 'react-native';
-import DarkLogoFull from '../assets/darkLogoFull.svg';
 import { Link } from 'expo-router';
-import { useMMKVBoolean } from 'react-native-mmkv';
 import { useEffect } from 'react';
+import { Platform, Text, View } from 'react-native';
+import { useMMKVBoolean } from 'react-native-mmkv';
+
+import DarkLogoFull from '../assets/darkLogoFull.svg';
 
 const Landing = () => {
   const [_, setAlreadyLaunched] = useMMKVBoolean('alreadyLaunched');
@@ -26,7 +27,7 @@ const Landing = () => {
           <View className="flex flex-row gap-4">
             <Link
               target="_blank"
-              href={'https://github.com/TotoalNormie/inUnition/releases'}
+              href="https://github.com/TotoalNormie/inUnition/releases"
               className="rounded-md bg-secondary p-4 text-xl text-text">
               Mobile releases{' '}
             </Link>
@@ -38,20 +39,20 @@ const Landing = () => {
           <>
             <View className="flex flex-row gap-4">
               <Link
-                href={'https://inunition.vercel.app'}
+                href="https://inunition.vercel.app"
                 target="_blank"
                 className="rounded-md bg-secondary p-2 text-xl text-text">
                 Try the Web app{' '}
               </Link>
-              <Link href="/" className="rounded-md bg-primary p-2 text-xl text-background">
+              <Link href="/" replace className="rounded-md bg-primary p-2 text-xl text-background">
                 Get started{' '}
               </Link>
             </View>
 
             <Link
               target="_blank"
-              href={'https://github.com/TotoalNormie/inUnition/releases'}
-              className="text-underline text-xl text-text">
+              href="https://github.com/TotoalNormie/inUnition/releases"
+              className="text-xl text-text underline">
               Other releases{' '}
             </Link>
           </>

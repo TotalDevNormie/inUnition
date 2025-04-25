@@ -1,10 +1,11 @@
+import { BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { useState, useEffect } from 'react';
 import { Pressable, Text, View, TextInput } from 'react-native';
-import { BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { ScrollView } from 'react-native-gesture-handler';
-import { TagsInput } from '../TagsInput';
-import DueDateInput from '../DueDateInput';
+
 import { Task, useTaskStore } from '../../utils/manageTasks';
+import DueDateInput from '../DueDateInput';
+import { TagsInput } from '../TagsInput';
 
 type TaskFormContentProps = {
   taskEdit: Task | false;

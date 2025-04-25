@@ -1,13 +1,14 @@
+import NetInfo from '@react-native-community/netinfo';
+import firestore from '@react-native-firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { Platform } from 'react-native';
+import { MMKV } from 'react-native-mmkv';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { MMKV } from 'react-native-mmkv';
-import NetInfo from '@react-native-community/netinfo';
+
 import debounce from './debounce';
 import { useAuthStore } from './useAuthStore';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import firestore from '@react-native-firebase/firestore';
 import { db } from '../firebaseConfig';
-import { Platform } from 'react-native';
 
 export type Note = {
   uuid: string;

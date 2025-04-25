@@ -1,0 +1,40 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Rules for Notes collection
+    match /notes/{noteId} {
+      // Allow create if the user is authenticated and the incoming document's
+      // userUid equals the auth uid.
+      allow create: if request.auth != null &&
+                    request.auth.uid == request.resource.data.userUid;
+      
+      // Allow read, update, and delete if the document's userUid matches the auth uid.
+      allow read, update, delete: if request.auth != null &&
+                    request.auth.uid == resource.data.userUid;
+    }
+    
+    // Rules for Tasks collection
+    match /tasks/{taskId} {
+      allow create: if request.auth != null &&
+                    request.auth.uid == request.resource.data.userUid;
+      
+      allow read, update, delete: if request.auth != null &&
+                    request.auth.uid == resource.data.userUid;
+    }
+    
+    // Rules for Task Boards collection
+    match /taskBoards/{taskBoardId} {
+      allow create: if request.auth != null &&
+                    request.auth.uid == request.resource.data.userUid;
+      
+      allow read, update, delete: if request.auth != null &&
+                    request.auth.uid == resource.data.userUid;
+    }
+    
+    // Deny all other access by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

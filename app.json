@@ -5,6 +5,7 @@
     "scheme": "inunition",
     "version": "1.0.0",
     "userInterfaceStyle": "dark",
+    "backgroundColor": "#121517",
     "web": {
       "bundler": "metro",
       "output": "static",
@@ -29,6 +30,7 @@
         }
       ]
     ],
+    "platforms": ["web", "android"],
     "experiments": {
       "typedRoutes": true,
       "tsconfigPaths": true,

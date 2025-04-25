@@ -1,11 +1,13 @@
-import { ScrollView, Text, View } from 'react-native';
+import { Feather, Ionicons, MaterialIcons, Octicons } from '@expo/vector-icons';
 import { TabRouter } from '@react-navigation/native';
 import { Navigator, usePathname, Slot, Link } from 'expo-router';
-import NavLink from '../../components/NavLink';
-import { Feather, Ionicons, MaterialIcons, Octicons } from '@expo/vector-icons';
+import { ScrollView, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+
 import DarkLogo from '../../assets/darkLogo.svg';
+import NavLink from '../../components/NavLink';
 import SearchButton from '../../components/SearchButton';
+
 import { useAuthStore } from '~/utils/useAuthStore';
 
 export default function TabsLayout() {

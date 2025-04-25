@@ -1,6 +1,7 @@
 import { Pressable, Text, useWindowDimensions, View } from 'react-native';
 import 'react-native-get-random-values';
 
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -10,9 +11,10 @@ import Animated, {
   measure,
   withTiming,
 } from 'react-native-reanimated';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { Task } from '../../utils/manageTasks';
+
 import { ColumnRefs } from './TaskColumn';
+import { Task } from '../../utils/manageTasks';
+
 import { MaterialIcons } from '@expo/vector-icons';
 import moment from 'moment';
 
@@ -117,7 +119,6 @@ export default function DraggableTask({
           {task?.endsAt && (
             <Text className="text-primary">Due {moment(task?.endsAt).fromNow()} </Text>
           )}
-
         </View>
         <Pressable onPress={() => editTask(task)}>
           <Text className="text-lg text-text">

@@ -1,6 +1,6 @@
 export default function debounce<T extends (...args: any[]) => any>(
   func: T,
-  delay: number,
+  delay: number
 ): (this: ThisParameterType<T>, ...args: Parameters<T>) => void {
   let timeout: ReturnType<typeof setTimeout>;
 

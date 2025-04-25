@@ -1,19 +1,37 @@
-import { useEffect, useState } from 'react';
-import { Text, View, TextInput, Pressable, ScrollView, Alert, Platform } from 'react-native';
-import { useAuthStore } from '../../utils/useAuthStore';
 import { Ionicons, MaterialIcons, Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import { useEffect, useState } from 'react';
+import DraggableList from 'react-draggable-list';
+import { Text, View, TextInput, Pressable, ScrollView, Alert, Platform } from 'react-native';
+import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
+import { GestureHandlerRootView, TouchableOpacity } from 'react-native-gesture-handler';
+import { MMKV } from 'react-native-mmkv';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
-import DraggableList from 'react-draggable-list';
-import { GestureHandlerRootView, TouchableOpacity } from 'react-native-gesture-handler';
-import { router } from 'expo-router';
+
+import { useAuthStore } from '../../utils/useAuthStore';
+
 import Modal from '~/components/Modal';
 
 interface UserSettingsState {
   defaultStatusTypes: string[];
   setDefaultStatusTypes: (statusTypes: string[]) => void;
 }
+
+const storage = new MMKV();
+
+const zustandStorage = {
+  getItem: (name: string) => {
+    const value = storage.getString(name);
+    return value ? JSON.parse(value) : null;
+  },
+  setItem: (name: string, value: any) => {
+    storage.set(name, JSON.stringify(value));
+  },
+  removeItem: (name: string) => {
+    storage.delete(name);
+  },
+};
 
 export const useUserSettingsStore = create<UserSettingsState>()(
   persist(
@@ -23,7 +41,7 @@ export const useUserSettingsStore = create<UserSettingsState>()(
     }),
     {
       name: 'user-settings-storage',
-      storage: createJSONStorage(() => localStorage),
+      storage: createJSONStorage(() => zustandStorage),
     }
   )
 );
@@ -64,15 +82,10 @@ const ListItem = ({
         <Text className="grow py-1 text-center text-text">{item} </Text>
       )}
       <Pressable onPress={() => handleEditing(item)} className="p-1">
-        <Feather
-          name={editing === item ? 'check' : 'edit-2'}
-          color="#fff"
-          size={20}
-          className="text-primary"
-        />
+        <Feather name={editing === item ? 'check' : 'edit-2'} color="#fff" size={20} />
       </Pressable>
       <Pressable onPress={() => deleteStatus(item)} className="p-1">
-        <Feather name="trash-2" size={20} color="#fff" className="text-red-500" />
+        <Feather name="trash-2" size={20} color="#fb2c36" className="text-red-500" />
       </Pressable>
     </View>
   );
@@ -96,14 +109,19 @@ const Tab = ({
 );
 
 export default function User() {
-  const { user, isLoading, updateProfile, error, clearError, deleteAccount } = useAuthStore();
+  const { user, isLoading, updateProfile, error, clearError, deleteAccount, resetPassword } =
+    useAuthStore();
   const { defaultStatusTypes, setDefaultStatusTypes } = useUserSettingsStore();
 
   // Form state
-  const [displayName, setDisplayName] = useState('');
+  const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
+  const [isEditingUsername, setIsEditingUsername] = useState(false);
+  const [isEditingEmail, setIsEditingEmail] = useState(false);
   const [activeTab, setActiveTab] = useState('profile');
+  const [isResettingPassword, setIsResettingPassword] = useState(false);
+  const [emailChanged, setEmailChanged] = useState(false);
+  const [isVerifyingEmail, setIsVerifyingEmail] = useState(false);
 
   // Status management
   const [newStatus, setNewStatus] = useState('');
@@ -120,7 +138,7 @@ export default function User() {
   // Load user data
   useEffect(() => {
     if (user) {
-      setDisplayName(user.displayName || '');
+      setUsername(user.displayName || '');
       setEmail(user.email || '');
       setStatusTypes([...defaultStatusTypes]);
     }
@@ -142,30 +160,126 @@ export default function User() {
     setModalOpen(true);
   };
 
-  // Handle profile update
-  const handleUpdateProfile = async () => {
-    if (!displayName.trim()) {
+  // Handle username update
+  const handleUpdateUsername = async () => {
+    if (!username.trim()) {
       if (Platform.OS === 'web') {
-        showAlert('Error', 'Display name cannot be empty');
+        showAlert('Error', 'Username cannot be empty');
       } else {
-        Alert.alert('Error', 'Display name cannot be empty');
+        Alert.alert('Error', 'Username cannot be empty');
       }
       return;
     }
 
     try {
       await updateProfile({
-        displayName,
-        email,
+        displayName: username,
       });
-      setIsEditing(false);
+      setIsEditingUsername(false);
+
       if (Platform.OS === 'web') {
-        showAlert('Success', 'Profile updated successfully');
+        showAlert('Success', 'Username updated successfully');
       } else {
-        Alert.alert('Success', 'Profile updated successfully');
+        Alert.alert('Success', 'Username updated successfully');
       }
     } catch (err) {
-      console.error('Failed to update profile:', err);
+      console.error('Failed to update username:', err);
+    }
+  };
+
+  const handleUpdateEmail = async () => {
+    if (user?.email === email) {
+      setIsEditingEmail(false);
+      return;
+    }
+
+    setEmailChanged(true);
+    try {
+      await updateProfile({
+        email,
+      });
+      setIsEditingEmail(false);
+
+      // Show verification notice even if there's an error, as Firebase will send the verification email
+      if (Platform.OS === 'web') {
+        showAlert(
+          'Email Verification Required',
+          'A verification email has been sent to your new address. Please verify it before the email change takes effect.'
+        );
+      } else {
+        Alert.alert(
+          'Email Verification Required',
+          'A verification email has been sent to your new address. Please verify it before the email change takes effect.'
+        );
+      }
+    } catch (err) {
+      console.error('Failed to update email:', err);
+      // Still show the verification message if the specific error is about verification
+      if (error && error.includes('Please verify the new email')) {
+        if (Platform.OS === 'web') {
+          showAlert(
+            'Email Verification Required',
+            'A verification email has been sent to your new address. Please verify it before the email change takes effect.'
+          );
+        } else {
+          Alert.alert(
+            'Email Verification Required',
+            'A verification email has been sent to your new address. Please verify it before the email change takes effect.'
+          );
+        }
+      }
+    }
+  };
+
+  // Handle sending verification email
+  const handleSendVerificationEmail = async () => {
+    setIsVerifyingEmail(true);
+    try {
+      // This function needs to be implemented in your auth store
+      // You'll need to add a sendEmailVerification function to useAuthStore
+      // await sendEmailVerification();
+
+      if (Platform.OS === 'web') {
+        showAlert(
+          'Verification Email Sent',
+          'A verification email has been sent to your email address. Please check your inbox and follow the instructions.'
+        );
+      } else {
+        Alert.alert(
+          'Verification Email Sent',
+          'A verification email has been sent to your email address. Please check your inbox and follow the instructions.'
+        );
+      }
+    } catch (err) {
+      console.error('Failed to send verification email:', err);
+    } finally {
+      setIsVerifyingEmail(false);
+    }
+  };
+
+  // Handle password reset
+  const handleResetPassword = async () => {
+    if (!user?.email) {
+      if (Platform.OS === 'web') {
+        showAlert('Error', 'No email address associated with this account');
+      } else {
+        Alert.alert('Error', 'No email address associated with this account');
+      }
+      return;
+    }
+
+    setIsResettingPassword(true);
+    try {
+      await resetPassword(user.email);
+      if (Platform.OS === 'web') {
+        showAlert('Password Reset', `A password reset link has been sent to ${user.email}`);
+      } else {
+        Alert.alert('Password Reset', `A password reset link has been sent to ${user.email}`);
+      }
+    } catch (err) {
+      console.error('Failed to send password reset email:', err);
+    } finally {
+      setIsResettingPassword(false);
     }
   };
 
@@ -277,6 +391,33 @@ export default function User() {
     }
   };
 
+  // Handle email verification notice
+  const renderEmailVerificationNotice = () => {
+    if (error && error.includes('Please verify the new email') && emailChanged) {
+      return (
+        <View className="mt-2 rounded-lg bg-yellow-500/10 p-3">
+          <Text className="text-yellow-500">
+            A verification email has been sent to your new email address. Please verify it before
+            the email change takes effect.
+          </Text>
+          <Pressable onPress={clearError} className="mt-2">
+            <Text className="text-yellow-500 underline">Dismiss</Text>
+          </Pressable>
+        </View>
+      );
+    } else if (error) {
+      return (
+        <View className="mb-4 rounded-lg bg-red-500/10 p-3">
+          <Text className="text-red-500">{error}</Text>
+          <Pressable onPress={clearError} className="mt-1">
+            <Text className="text-red-500 underline">Dismiss</Text>
+          </Pressable>
+        </View>
+      );
+    }
+    return null;
+  };
+
   if (isLoading) {
     return (
       <View className="flex flex-1 items-center justify-center">
@@ -334,87 +475,142 @@ export default function User() {
             {/* Profile Tab */}
             {activeTab === 'profile' && (
               <View className="flex flex-col gap-6">
-                <View className="mb-4 flex flex-row items-center justify-between">
+                <View className="mb-4">
                   <Text className="text-xl font-medium text-text">Profile Information </Text>
+                </View>
+
+                {renderEmailVerificationNotice()}
+
+                {/* Username Section */}
+                <View className="flex flex-row items-center justify-between">
+                  <Text className="font-medium text-text">Username </Text>
                   <Pressable
-                    onPress={() => setIsEditing(!isEditing)}
+                    onPress={() => setIsEditingUsername(!isEditingUsername)}
                     className="flex flex-row items-center">
                     <Feather
-                      name={isEditing ? 'x' : 'edit-2'}
-                      size={18}
-                      color="#fff"
-                      className={isEditing ? 'text-red-500' : 'text-primary'}
+                      name={isEditingUsername ? 'x' : 'edit-2'}
+                      size={16}
+                      color={isEditingUsername ? '#fb2c36' : '#fff'}
                     />
-                    <Text className={`ml-2 ${isEditing ? 'text-red-500' : 'text-primary'}`}>
-                      {isEditing ? 'Cancel ' : 'Edit '}{' '}
+                    <Text className={`ml-2 ${isEditingUsername ? 'text-red-500' : 'text-text'}`}>
+                      {isEditingUsername ? 'Cancel' : 'Edit'}{' '}
                     </Text>
                   </Pressable>
                 </View>
 
-                {error && (
-                  <View className="mb-4 rounded-lg bg-red-500/10 p-3">
-                    <Text className="text-red-500">{error} </Text>
-                    <Pressable onPress={clearError} className="mt-1">
-                      <Text className="text-red-500 underline">Dismiss </Text>
+                <TextInput
+                  className={`mt-2 rounded-lg border-2 p-2 text-text ${
+                    isEditingUsername
+                      ? 'borer-2 border-primary/50 bg-secondary/30'
+                      : 'border-secondary'
+                  }`}
+                  value={username}
+                  onChangeText={setUsername}
+                  editable={isEditingUsername}
+                />
+
+                {isEditingUsername && (
+                  <Pressable
+                    onPress={handleUpdateUsername}
+                    className="mt-3 rounded-lg bg-primary py-2">
+                    <Text className="text-center font-medium text-white">Update Username</Text>
+                  </Pressable>
+                )}
+
+                {/* Email Section */}
+                <View className="flex flex-row items-center justify-between">
+                  <Text className="font-medium text-text">Email </Text>
+                  <Pressable
+                    onPress={() => setIsEditingEmail(!isEditingEmail)}
+                    className="flex flex-row items-center">
+                    <Feather
+                      name={isEditingEmail ? 'x' : 'edit-2'}
+                      size={16}
+                      color={isEditingEmail ? '#fb2c36' : '#fff'}
+                    />
+                    <Text className={`ml-2 ${isEditingEmail ? 'text-red-500' : 'text-text'}`}>
+                      {isEditingEmail ? 'Cancel ' : 'Edit '}{' '}
+                    </Text>
+                  </Pressable>
+                </View>
+
+                <TextInput
+                  className={`mt-2 rounded-lg border-2 p-2 text-text ${
+                    isEditingEmail ? 'border-primary/50 bg-secondary/30' : 'border-secondary'
+                  }`}
+                  value={email}
+                  onChangeText={setEmail}
+                  editable={isEditingEmail}
+                  keyboardType="email-address"
+                />
+
+                {isEditingEmail && (
+                  <>
+                    <Text className="text-sm text-text/70">
+                      Changing your email will require verification before the change takes effect.
+                    </Text>
+                    <Pressable
+                      onPress={handleUpdateEmail}
+                      className="mt-4 rounded-lg bg-primary py-2">
+                      <Text className="text-center font-medium text-background">Update Email</Text>
+                    </Pressable>
+                  </>
+                )}
+
+                {/* Email Verification Button */}
+                {!user.emailVerified && (
+                  <View className="mt-2">
+                    <Text className="mb-2 text-yellow-500">
+                      Your email is not verified. Please verify it to access all features.
+                    </Text>
+                    <Pressable
+                      onPress={handleSendVerificationEmail}
+                      disabled={isVerifyingEmail}
+                      className="rounded-lg bg-yellow-500/10 py-2">
+                      <Text className="text-center font-medium text-yellow-500">
+                        {isVerifyingEmail ? 'Sending...' : 'Send Verification Email'}
+                      </Text>
                     </Pressable>
                   </View>
                 )}
 
-                <View className="flex flex-col gap-2">
-                  <Text className="font-medium text-text">Display Name </Text>
-                  <TextInput
-                    className={`rounded-lg border p-3 text-text ${
-                      isEditing ? 'border-primary/50 bg-secondary/30' : 'border-secondary'
-                    }`}
-                    value={displayName}
-                    onChangeText={setDisplayName}
-                    editable={isEditing}
+                {/* Password Reset Section */}
+                <Text className="font-medium text-text">Password </Text>
+                <Pressable
+                  onPress={handleResetPassword}
+                  disabled={isResettingPassword || !user?.emailVerified}
+                  className={`rounded-lg ${isResettingPassword ? 'bg-primary/20' : user?.emailVerified ? 'bg-primary' : 'bg-secondary'} py-2`}>
+                  <Text
+                    className={`text-center font-medium ${user?.emailVerified ? 'text-background' : 'text-text'}`}>
+                    {isResettingPassword ? 'Sending Reset Email...' : 'Reset Password'}
+                  </Text>
+                </Pressable>
+                <Text className="text-sm text-text/70">
+                  {!user?.emailVerified
+                    ? 'Your email is not verified. Please very it to reset your password.'
+                    : 'A password reset link will be sent to your email address.'}
+                </Text>
+
+                <Text className="mb-4 text-xl font-medium text-text">Account Actions </Text>
+
+                <Pressable
+                  onPress={() => router.push('/logout')}
+                  className="mb-2 flex flex-row items-center rounded-lg bg-secondary/30 px-4 py-3">
+                  <Ionicons
+                    name="log-out-outline"
+                    size={20}
+                    color="#fff"
+                    className="mr-3 text-text"
                   />
-                </View>
+                  <Text className="text-text">Log Out </Text>
+                </Pressable>
 
-                <View className="flex flex-col gap-2">
-                  <Text className="font-medium text-text">Email </Text>
-                  <TextInput
-                    className={`rounded-lg border p-3 text-text ${
-                      isEditing ? 'border-primary/50 bg-secondary/30' : 'border-secondary'
-                    }`}
-                    value={email}
-                    onChangeText={setEmail}
-                    editable={isEditing}
-                    keyboardType="email-address"
-                  />
-                </View>
-
-                {isEditing && (
-                  <Pressable
-                    onPress={handleUpdateProfile}
-                    className="mt-4 rounded-lg bg-primary py-3">
-                    <Text className="text-center font-medium text-white">Save Changes </Text>
-                  </Pressable>
-                )}
-
-                <View className="mt-6 border-t border-secondary pt-6">
-                  <Text className="mb-4 text-xl font-medium text-text">Account Actions </Text>
-
-                  <Pressable
-                    onPress={() => router.push('/logout')}
-                    className="mb-3 flex flex-row items-center rounded-lg bg-secondary/30 px-4 py-3">
-                    <Ionicons
-                      name="log-out-outline"
-                      size={20}
-                      color="#fff"
-                      className="mr-3 text-text"
-                    />
-                    <Text className="text-text">Log Out </Text>
-                  </Pressable>
-
-                  <Pressable
-                    onPress={handleDeleteAccount}
-                    className="flex flex-row items-center rounded-lg bg-red-500/10 px-4 py-3">
-                    <Feather name="trash-2" color="#fff" size={20} className="mr-3 text-red-500" />
-                    <Text className="text-red-500">Delete Account </Text>
-                  </Pressable>
-                </View>
+                <Pressable
+                  onPress={handleDeleteAccount}
+                  className="flex flex-row items-center rounded-lg bg-red-500/10 px-4 py-3">
+                  <Feather name="trash-2" color="#fb2c36" size={20} className="mr-3 text-red-500" />
+                  <Text className="text-red-500">Delete Account </Text>
+                </Pressable>
               </View>
             )}
 
@@ -441,7 +637,7 @@ export default function User() {
                     <Pressable
                       className="flex items-center justify-center rounded-lg bg-primary px-4 py-2"
                       onPress={handleNewStatus}>
-                      <Text className="text-white">Add </Text>
+                      <Text className="text-background">Add </Text>
                     </Pressable>
                   </View>
 
@@ -494,7 +690,7 @@ export default function User() {
                   <Pressable
                     onPress={saveDefaultStatusTypes}
                     className="rounded-lg bg-primary py-3">
-                    <Text className="text-center font-medium text-white">
+                    <Text className="text-center font-medium text-background">
                       Save Default Statuses{' '}
                     </Text>
                   </Pressable>
@@ -505,7 +701,6 @@ export default function User() {
         </View>
       </ScrollView>
 
-      {/* Custom Alert Modal */}
       <Modal open={modalOpen} setOpen={setModalOpen} title={modalTitle}>
         <View>
           {modalContent}

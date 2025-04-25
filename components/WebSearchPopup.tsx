@@ -1,3 +1,6 @@
+import { FontAwesome5 } from '@expo/vector-icons';
+import { router } from 'expo-router';
+import moment from 'moment';
 import { useEffect, useRef, useState } from 'react';
 import {
   View,
@@ -9,13 +12,11 @@ import {
   Platform,
   ActivityIndicator,
 } from 'react-native';
-import { FontAwesome5 } from '@expo/vector-icons';
-import { useSearchStore, SearchItem, SearchItemType } from '../utils/useSearchStore';
-import { router } from 'expo-router';
-import moment from 'moment';
+
 import { Note } from '../utils/manageNotes';
 import { TaskBoard } from '../utils/manageTaskBoards';
 import { Task } from '../utils/manageTasks';
+import { useSearchStore, SearchItem, SearchItemType } from '../utils/useSearchStore';
 
 type SearchResult = {
   type: SearchItemType;
@@ -79,7 +80,7 @@ export default function SearchPopup() {
 
       return {
         type: item.type,
-        item: item,
+        item,
         matches,
       };
     });

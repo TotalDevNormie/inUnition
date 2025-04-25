@@ -1,7 +1,6 @@
 import React from 'react';
-import { Text, TouchableWithoutFeedback, View, Platform, StyleSheet } from 'react-native';
+import { Text, TouchableWithoutFeedback, View, Platform, StyleSheet, Linking } from 'react-native';
 import FitImage from 'react-native-fit-image';
-import { Linking } from 'react-native';
 
 // the code was taken from react-native-markdown-display (https://github.com/iamacup/react-native-markdown-display/blob/master/src/lib/renderRules.js)
 

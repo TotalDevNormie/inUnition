@@ -1,11 +1,12 @@
-import { View, Pressable, Text } from 'react-native';
-import { router } from 'expo-router';
 import { AntDesign, Ionicons, MaterialIcons } from '@expo/vector-icons';
-import TaskColumn from '../../components/tasks/TaskColumn';
-import { TaskBoardParent, TaskBoardContent } from '../../components/tasks/TaskBoardParent';
-import TaskForm from '../../components/tasks/TaskForm';
-import TaskBoardSettings from '../../components/tasks/TaskBoardSettings';
+import { router } from 'expo-router';
+import { View, Pressable, Text } from 'react-native';
+
 import Modal from '../../components/Modal';
+import { TaskBoardParent, TaskBoardContent } from '../../components/tasks/TaskBoardParent';
+import TaskBoardSettings from '../../components/tasks/TaskBoardSettings';
+import TaskColumn from '../../components/tasks/TaskColumn';
+import TaskForm from '../../components/tasks/TaskForm';
 
 export default function WebTasks() {
   return <TaskBoardParent TaskBoardContent={TaskBoardContentWeb} />;

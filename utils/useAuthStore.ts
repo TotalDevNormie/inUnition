@@ -1,9 +1,4 @@
-import { create } from 'zustand';
-import { createJSONStorage, persist } from 'zustand/middleware';
-import { MMKV } from 'react-native-mmkv';
-import { Platform } from 'react-native'; // Import Platform
-
-// Import functions from the standard Firebase web Auth SDK
+import nativeAuth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 import {
   onAuthStateChanged as webOnAuthStateChanged,
   signInWithEmailAndPassword as webSignInWithEmailAndPassword,
@@ -15,10 +10,16 @@ import {
   deleteUser as webDeleteUser,
   Auth as WebAuth,
   User as WebUser,
+  sendEmailVerification as webSendEmailVerification,
 } from 'firebase/auth';
+import { Platform } from 'react-native'; // Import Platform
+import { MMKV } from 'react-native-mmkv';
+import { create } from 'zustand';
+import { createJSONStorage, persist } from 'zustand/middleware';
+
+// Import functions from the standard Firebase web Auth SDK
 
 // Import functions/module from @react-native-firebase/auth
-import nativeAuth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
 
 // Import the initialized Firebase app instances from your firebaseConfig
 // Your firebaseConfig.ts should export 'auth' and 'db' which are
@@ -30,6 +31,7 @@ export type User = {
   uid: string;
   email: string | null;
   displayName: string | null;
+  emailVerified: boolean;
   photoURL: string | null;
 };
 
@@ -45,6 +47,7 @@ interface AuthState {
   updateProfile: (data: Partial<User>) => Promise<void>;
   deleteAccount: () => Promise<void>;
   resetPassword: (email: string) => Promise<void>;
+  sendEmailVerification: () => Promise<void>;
   clearError: () => void;
   initializeAuth: () => Promise<(() => void) | undefined>;
 }
@@ -63,6 +66,31 @@ const zustandStorage = {
     storage.delete(name);
   },
 };
+
+function getCleanFirebaseErrorMessage(error: any): string {
+  const errorCode = error.code.replace('auth/', '');
+
+  console.log('errorCode', errorCode);
+
+  if (!errorCode) {
+    return 'An unknown error occurred';
+  }
+
+  const errorMessages: Record<string, string> = {
+    'invalid-email': 'Please enter a valid email address',
+    'invalid-credential': 'Email or password is incorrect',
+    'user-disabled': 'This account has been disabled',
+    'user-not-found': 'No account found with this email',
+    'wrong-password': 'Incorrect password',
+    'email-already-in-use': 'This email is already registered',
+    'weak-password': 'Password should be at least 6 characters',
+    'operation-not-allowed': 'This email is already registered',
+    'popup-closed-by-user': 'Sign-in popup was closed before completing the operation',
+    'network-request-failed': 'Network error. Please check your connection',
+  };
+
+  return errorMessages[errorCode] || `Error: ${errorCode}`;
+}
 
 export const useAuthStore = create<AuthState>()(
   persist(
@@ -85,12 +113,12 @@ export const useAuthStore = create<AuthState>()(
                   email: firebaseUser.email,
                   displayName: firebaseUser.displayName,
                   photoURL: firebaseUser.photoURL,
+                  emailVerified: firebaseUser.emailVerified,
                 };
                 set({ user, isAuthenticated: true, isLoading: false });
               } else {
                 set({ user: null, isAuthenticated: false, isLoading: false });
               }
-              cleanUpData();
             });
           } else {
             // Use @react-native-firebase on mobile
@@ -102,19 +130,19 @@ export const useAuthStore = create<AuthState>()(
                   email: firebaseUser.email,
                   displayName: firebaseUser.displayName,
                   photoURL: firebaseUser.photoURL,
+                  emailVerified: firebaseUser.emailVerified,
                 };
                 set({ user, isAuthenticated: true, isLoading: false });
               } else {
                 set({ user: null, isAuthenticated: false, isLoading: false });
               }
-              cleanUpData();
             });
           }
           return unsubscribe;
         } catch (error: any) {
           console.log('Error initializing auth:', error.code, error.message);
           set({
-            error: error.message || "Couldn't initialize authentication",
+            error: getCleanFirebaseErrorMessage(error),
             isLoading: false,
             isAuthenticated: false,
           });
@@ -139,19 +167,21 @@ export const useAuthStore = create<AuthState>()(
               email: userCredential.user.email,
               displayName: userCredential.user.displayName,
               photoURL: userCredential.user.photoURL,
+              emailVerified: userCredential.user.emailVerified,
             };
+            if (get().isAuthenticated) cleanUpData();
             set({ user, isAuthenticated: true, isLoading: false });
-            cleanUpData();
           }
         } catch (error: any) {
           console.log('Error logging in:', error.code, error.message);
           set({
-            error: error.message.replace(/\[.*?\]/g, '').trim(),
+            error: getCleanFirebaseErrorMessage(error),
             isLoading: false,
           });
         }
       },
 
+      // In your register function in useAuthStore.ts
       register: async (email: string, password: string, displayName: string) => {
         set({ isLoading: true, error: null });
         try {
@@ -164,11 +194,17 @@ export const useAuthStore = create<AuthState>()(
             );
             if (userCredential.user) {
               await webUpdateProfile(userCredential.user as WebUser, { displayName });
+
+              // Send verification email
+              await webSendEmailVerification(userCredential.user as WebUser);
             }
           } else {
-            userCredential = await nativeAuth().createUserWithEmailAndPassword(email, password); // Corrected
+            userCredential = await nativeAuth().createUserWithEmailAndPassword(email, password);
             if (userCredential.user) {
               await userCredential.user.updateProfile({ displayName });
+
+              // Send verification email
+              await userCredential.user.sendEmailVerification();
             }
           }
 
@@ -176,17 +212,18 @@ export const useAuthStore = create<AuthState>()(
             const user: User = {
               uid: userCredential.user.uid,
               email: userCredential.user.email,
-              displayName, // Use the provided displayName after update
+              displayName,
               photoURL: null,
+              emailVerified: false,
             };
+            if (get().isAuthenticated) cleanUpData();
             set({ user, isAuthenticated: true, isLoading: false });
-            cleanUpData();
           } else {
             set({ error: 'Registration failed: User not created', isLoading: false });
           }
         } catch (error: any) {
           console.log('Error registering:', error.code, error.message);
-          set({ error: error.message.replace(/\[.*?\]/g, '').trim(), isLoading: false });
+          set({ error: getCleanFirebaseErrorMessage(error), isLoading: false });
         }
       },
 
@@ -204,7 +241,7 @@ export const useAuthStore = create<AuthState>()(
           cleanUpData();
         } catch (error: any) {
           console.log('Error logging out:', error.code, error.message);
-          set({ error: error.message, isLoading: false });
+          set({ error: getCleanFirebaseErrorMessage(error), isLoading: false });
         }
       },
 
@@ -246,7 +283,7 @@ export const useAuthStore = create<AuthState>()(
           set({ user: updatedUser, isLoading: false });
         } catch (error: any) {
           console.log('Error updating profile:', error.code, error.message);
-          set({ error: error.message, isLoading: false });
+          set({ error: getCleanFirebaseErrorMessage(error), isLoading: false });
         }
       },
 
@@ -259,7 +296,7 @@ export const useAuthStore = create<AuthState>()(
             currentUser = (auth as WebAuth).currentUser;
           } else {
             // Use @react-native-firebase on mobile
-            currentUser = nativeAuth().currentUser; // Corrected
+            currentUser = nativeAuth().currentUser;
           }
 
           if (!currentUser) throw new Error('User not authenticated');
@@ -270,11 +307,35 @@ export const useAuthStore = create<AuthState>()(
             await currentUser.delete();
           }
 
+          if (get().isAuthenticated) cleanUpData();
           set({ user: null, isAuthenticated: false, isLoading: false });
-          cleanUpData();
         } catch (error: any) {
           console.log('Error deleting account:', error.code, error.message);
           set({ error: error.message, isLoading: false });
+        }
+      },
+      sendEmailVerification: async () => {
+        set({ isLoading: true, error: null });
+        try {
+          let currentUser;
+          if (Platform.OS === 'web') {
+            // Use web SDK on web
+            currentUser = (auth as WebAuth).currentUser;
+            if (!currentUser) throw new Error('User not authenticated');
+
+            // Import the function from firebase/auth
+            await webSendEmailVerification(currentUser as WebUser);
+          } else {
+            // Use @react-native-firebase on mobile
+            currentUser = nativeAuth().currentUser;
+            if (!currentUser) throw new Error('User not authenticated');
+
+            await currentUser.sendEmailVerification();
+          }
+          set({ isLoading: false });
+        } catch (error: any) {
+          console.log('Error sending verification email:', error.code, error.message);
+          set({ error: getCleanFirebaseErrorMessage(error), isLoading: false });
         }
       },
 
@@ -282,16 +343,14 @@ export const useAuthStore = create<AuthState>()(
         set({ isLoading: true, error: null });
         try {
           if (Platform.OS === 'web') {
-            // Use web SDK on web
             await webSendPasswordResetEmail(auth as WebAuth, email);
           } else {
-            // Use @react-native-firebase on mobile
-            await nativeAuth().sendPasswordResetEmail(email); // Corrected
+            await nativeAuth().sendPasswordResetEmail(email);
           }
           set({ isLoading: false });
         } catch (error: any) {
           console.log('Error resetting password:', error.code, error.message);
-          set({ error: error.message, isLoading: false });
+          set({ error: getCleanFirebaseErrorMessage(error), isLoading: false });
         }
       },
 

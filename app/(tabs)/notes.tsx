@@ -1,9 +1,11 @@
 import { FontAwesome5 } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
-import { Platform, Pressable, Text, View, useWindowDimensions } from 'react-native'; // Import useWindowDimensions
-import { Note, useNoteStore } from '../../utils/manageNotes';
 import moment from 'moment';
+import { Platform, Pressable, Text, View, useWindowDimensions } from 'react-native'; // Import useWindowDimensions
 import MasonryList from 'reanimated-masonry-list';
+
+import { Note, useNoteStore } from '../../utils/manageNotes';
+
 import 'react-native-get-random-values';
 import { v4 } from 'uuid';
 import { useState } from 'react';
@@ -29,7 +31,7 @@ export default function Notes() {
   );
 
   return (
-    <View className={`mb-2 flex flex-1 flex-col overflow-hidden rounded-xl px-4`}>
+    <View className="mb-2 flex flex-1 flex-col overflow-hidden rounded-xl px-4">
       <View className="mb-4 flex flex-row items-center justify-between gap-4">
         <Text className="text-3xl text-text">Notes </Text>
         {Platform.OS == 'web' && <NewButton />}
@@ -45,7 +47,7 @@ export default function Notes() {
         />
       </View>
       {Platform.OS !== 'web' && (
-        <View className="absolute bottom-0 right-0">
+        <View className="absolute bottom-0 right-4">
           <NewButton />
         </View>
       )}
@@ -54,7 +56,7 @@ export default function Notes() {
 }
 const NoteCard = ({ note }: { note: Note }) => (
   <Pressable onPress={() => router.push(`/note/${note.uuid}`)} key={note.uuid}>
-    <View className={`mb-4 flex flex-col gap-4 rounded-2xl bg-secondary-850 p-4`}>
+    <View className="mb-4 flex flex-col gap-4 rounded-2xl bg-secondary-850 p-4">
       {note?.title && <Text className="text-xl text-text">{note.title} </Text>}
       {note?.content && (
         <Text className="max-h-[12rem] overflow-hidden text-text">

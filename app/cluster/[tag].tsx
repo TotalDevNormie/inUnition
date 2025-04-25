@@ -1,19 +1,21 @@
+import { AntDesign, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from '@gorhom/bottom-sheet';
 import { Redirect, router, useLocalSearchParams } from 'expo-router';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { Platform, Text, View } from 'react-native';
 import { Pressable, ScrollView, GestureHandlerRootView } from 'react-native-gesture-handler';
-import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from '@gorhom/bottom-sheet';
-import { useRef, useEffect, useState, useCallback } from 'react';
-import NotesSlider from '~/components/NotesSlider';
-import { TaskBoardParent } from '~/components/tasks/TaskBoardParent';
-import { useNoteStore } from '~/utils/manageNotes';
-import { useTaskBoardStore } from '~/utils/manageTaskBoards';
+
 import { TaskBoardContentWeb } from '../taskboard/[uuid].web';
+
+import NotesSlider from '~/components/NotesSlider';
 import { Hr } from '~/components/WebTabLayout';
-import { AntDesign, Ionicons, MaterialIcons } from '@expo/vector-icons';
-import { Task, useTaskStore } from '~/utils/manageTasks';
-import TaskForm from '~/components/tasks/TaskForm';
+import { TaskBoardParent } from '~/components/tasks/TaskBoardParent';
 import TaskBoardSettings from '~/components/tasks/TaskBoardSettings';
 import TaskColumn from '~/components/tasks/TaskColumn';
+import TaskForm from '~/components/tasks/TaskForm';
+import { useNoteStore } from '~/utils/manageNotes';
+import { useTaskBoardStore } from '~/utils/manageTaskBoards';
+import { Task, useTaskStore } from '~/utils/manageTasks';
 
 export default function TagCluster() {
   const { tag } = useLocalSearchParams();
@@ -117,9 +119,9 @@ export default function TagCluster() {
   const renderWebContent = () => (
     <ScrollView>
       <Text className="pb-8 text-3xl text-text">
-        <Text className="font-extrabold capitalize text-text">{tag}</Text> Cluster
+        <Text className="font-extrabold capitalize text-text">{tag} </Text> Cluster
       </Text>
-      
+
       {notes.length > 0 && (
         <>
           <Text className="pb-4 text-xl text-text">Notes</Text>
@@ -134,10 +136,7 @@ export default function TagCluster() {
       {taskBoards.map((taskBoard) => (
         <View key={taskBoard.uuid}>
           <Hr />
-          <TaskBoardParent
-            propUuid={taskBoard.uuid}
-            TaskBoardContent={TaskBoardContentWeb}
-          />
+          <TaskBoardParent propUuid={taskBoard.uuid} TaskBoardContent={TaskBoardContentWeb} />
         </View>
       ))}
     </ScrollView>
@@ -152,10 +151,10 @@ export default function TagCluster() {
           </Text>
         </Pressable>
         <Text className="text-3xl text-text">
-          <Text className="font-extrabold capitalize text-text">{tag}</Text> Cluster
+          <Text className="font-extrabold capitalize text-text">{tag} </Text> Cluster{' '}
         </Text>
       </View>
-      
+
       {notes.length > 0 && (
         <>
           <Text className="pb-4 text-xl text-text">Notes</Text>
@@ -169,27 +168,23 @@ export default function TagCluster() {
 
       {taskBoards.map((taskBoard) => {
         const tasks = tasksFromBoard(taskBoard.uuid);
-        
+
         return (
           <View key={taskBoard.uuid} className="mb-6 border-t border-gray-700 pt-4">
-            <View className="flex flex-row justify-between items-center mb-4">
+            <View className="mb-4 flex flex-row items-center justify-between">
               <Text className="text-xl font-semibold text-text">{taskBoard.name}</Text>
               <View className="flex flex-row gap-2">
-                <Pressable
-                  className="p-2"
-                  onPress={() => handleAddTask(taskBoard.uuid)}>
+                <Pressable className="p-2" onPress={() => handleAddTask(taskBoard.uuid)}>
                   <MaterialIcons name="add-task" size={24} color="#fff" />
                 </Pressable>
-                <Pressable
-                  className="p-2"
-                  onPress={() => handleOpenSettings(taskBoard.uuid)}>
+                <Pressable className="p-2" onPress={() => handleOpenSettings(taskBoard.uuid)}>
                   <Ionicons name="settings" size={24} color="#fff" />
                 </Pressable>
               </View>
             </View>
-            
-            <Text className="text-sm text-gray-400 mb-4">{taskBoard.description}</Text>
-            
+
+            <Text className="mb-4 text-sm text-gray-400">{taskBoard.description}</Text>
+
             <View className="flex flex-wrap gap-2 portrait:flex-col landscape:flex-row">
               {taskBoard.statusTypes?.map((status) => (
                 <TaskColumn
@@ -219,14 +214,13 @@ export default function TagCluster() {
         handleIndicatorStyle={{ backgroundColor: '#313749' }}
         backgroundStyle={{ backgroundColor: '#121517' }}
         index={0}
-        snapPoints={['70%']}
-      >
+        snapPoints={['70%']}>
         <BottomSheetView>
           {activeTaskBoardId && (
-            <TaskForm 
-              taskEdit={taskEdit} 
-              boardUuid={activeTaskBoardId} 
-              onComplete={handleTaskComplete} 
+            <TaskForm
+              taskEdit={taskEdit}
+              boardUuid={activeTaskBoardId}
+              onComplete={handleTaskComplete}
             />
           )}
         </BottomSheetView>
@@ -244,14 +238,10 @@ export default function TagCluster() {
           borderTopColor: '#313749',
         }}
         handleIndicatorStyle={{ backgroundColor: '#313749' }}
-        backgroundStyle={{ backgroundColor: '#121517' }}
-      >
+        backgroundStyle={{ backgroundColor: '#121517' }}>
         <BottomSheetView>
           {activeTaskBoardId && (
-            <TaskBoardSettings 
-              boardUuid={activeTaskBoardId} 
-              onComplete={handleSettingsComplete} 
-            />
+            <TaskBoardSettings boardUuid={activeTaskBoardId} onComplete={handleSettingsComplete} />
           )}
         </BottomSheetView>
       </BottomSheetModal>
@@ -266,9 +256,7 @@ export default function TagCluster() {
   // For mobile, wrap with necessary providers
   return (
     <BottomSheetModalProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        {renderMobileContent()}
-      </GestureHandlerRootView>
+      <GestureHandlerRootView style={{ flex: 1 }}>{renderMobileContent()}</GestureHandlerRootView>
     </BottomSheetModalProvider>
   );
 }

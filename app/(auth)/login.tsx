@@ -1,6 +1,7 @@
-import { View, Text, TextInput, Pressable, ActivityIndicator } from 'react-native';
-import { useState, useEffect } from 'react'; // Import useEffect
 import { Link, Redirect, useRouter } from 'expo-router';
+import { useState, useEffect } from 'react'; // Import useEffect
+import { View, Text, TextInput, Pressable, ActivityIndicator } from 'react-native';
+
 import { useAuthStore } from '../../utils/useAuthStore';
 
 export default function Login() {
@@ -42,12 +43,12 @@ export default function Login() {
         editable={!isLoading}
         onFocus={clearError}
         placeholderTextColor="#fff"
-        onEndEditing={handleLogin}
+        onSubmitEditing={handleLogin}
       />
 
       <TextInput
         placeholder="Password"
-        secureTextEntry={true}
+        secureTextEntry
         onChangeText={setPassword}
         value={password}
         className="rounded-lg border-2 border-secondary p-2 text-text"
@@ -55,7 +56,7 @@ export default function Login() {
         autoCapitalize="none"
         editable={!isLoading}
         onFocus={clearError}
-        onEndEditing={handleLogin}
+        onSubmitEditing={handleLogin}
       />
 
       <Pressable

@@ -1,18 +1,19 @@
 import '../globalPolyfills';
+import * as NavigationBar from 'expo-navigation-bar';
 import { Slot, Stack, useRouter } from 'expo-router';
 import { useEffect } from 'react';
-import { MMKV } from 'react-native-mmkv';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import * as NavigationBar from 'expo-navigation-bar';
+import { MMKV } from 'react-native-mmkv';
 import { MD3DarkTheme, Provider as PaperProvider } from 'react-native-paper';
 import 'expo-dev-client';
 
 import '../global.css';
-import { useAuthStore } from '../utils/useAuthStore';
-import { setupTasksListener } from '../utils/manageTasks';
-import { setupTaskBoardsListener } from '../utils/manageTaskBoards';
-import { setupNotesListener } from '../utils/manageNotes';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+
+import { setupNotesListener } from '../utils/manageNotes';
+import { setupTaskBoardsListener } from '../utils/manageTaskBoards';
+import { setupTasksListener } from '../utils/manageTasks';
+import { useAuthStore } from '../utils/useAuthStore';
 
 const theme = {
   ...MD3DarkTheme,

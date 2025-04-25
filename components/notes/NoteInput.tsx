@@ -1,10 +1,11 @@
-import { useState } from 'react';
-import { TextInput, View, Text } from 'react-native';
 import {
   MarkdownStyle,
   MarkdownTextInput,
   parseExpensiMark,
 } from '@expensify/react-native-live-markdown';
+import { useState } from 'react';
+import { TextInput, View, Text } from 'react-native';
+
 import { useNoteStore } from '../../utils/manageNotes';
 
 export default function NoteInput({ uuid }: { uuid: string }) {
@@ -27,11 +28,11 @@ export default function NoteInput({ uuid }: { uuid: string }) {
 
   return (
     <View className="flex grow flex-col gap-4 p-4">
-      {note?.tags && (
+      {/* {note?.tags && (
         <Text className="text-text">
           Tags: <Text className="text-primary">{note.tags.join(', ')} </Text>{' '}
         </Text>
-      )}
+      )} */}
       <TextInput
         value={title}
         onChangeText={handleTitleChange}

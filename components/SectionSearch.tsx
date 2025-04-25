@@ -1,6 +1,6 @@
-import { View, TextInput, Pressable } from 'react-native';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { View, TextInput, Pressable } from 'react-native';
 
 export default function SectionSearch({ localQuery, setLocalQuery, placeholder = 'Search...' }) {
   return (

@@ -1,10 +1,11 @@
 // app/search/index.tsx
+import { useLocalSearchParams } from 'expo-router';
 import React, { useEffect } from 'react';
 import { View, Text } from 'react-native';
+
 import SearchBar from '../../components/SearchBar';
 import SearchResults from '../../components/SearchResults';
 import { useSearchStore } from '../../utils/useSearchStore';
-import { useLocalSearchParams } from 'expo-router';
 
 export default function SearchScreen() {
   const setQuery = useSearchStore((state) => state.setQuery);
@@ -18,7 +19,7 @@ export default function SearchScreen() {
     <View className="flex-1 bg-background p-4">
       <Text className="mb-4 text-3xl font-bold text-text">Search </Text>
       <SearchBar />
-      <View className="mt-4 flex-1">
+      <View className="flex-1">
         <SearchResults />
       </View>
     </View>

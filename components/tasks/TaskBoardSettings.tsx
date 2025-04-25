@@ -1,10 +1,11 @@
+import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
+import { router } from 'expo-router';
 import { useState, useEffect, useRef } from 'react';
 import { Pressable, Text, View, TextInput } from 'react-native';
-import { BottomSheetTextInput } from '@gorhom/bottom-sheet';
-import { TagsInput } from '../TagsInput';
-import DueDateInput from '../DueDateInput';
+
 import { useTaskBoardStore } from '../../utils/manageTaskBoards';
-import { router } from 'expo-router';
+import DueDateInput from '../DueDateInput';
+import { TagsInput } from '../TagsInput';
 
 type TaskBoardSettingsContentProps = {
   boardUuid: string;

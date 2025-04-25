@@ -1,12 +1,14 @@
-import { FlatList, Platform, Pressable, Text, View } from 'react-native';
-import { Note, useNoteStore } from '../../utils/manageNotes';
-import { Link, router } from 'expo-router';
 import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
+import { Link, router } from 'expo-router';
 import moment from 'moment';
-import { Task, useTaskStore } from '../../utils/manageTasks';
-import { useTaskBoardStore } from '../../utils/manageTaskBoards';
-import NotesSlider from '~/components/NotesSlider';
+import { FlatList, Platform, Pressable, Text, View } from 'react-native';
 import { ScrollView } from 'react-native-gesture-handler';
+
+import { Note, useNoteStore } from '../../utils/manageNotes';
+import { useTaskBoardStore } from '../../utils/manageTaskBoards';
+import { Task, useTaskStore } from '../../utils/manageTasks';
+
+import NotesSlider from '~/components/NotesSlider';
 
 export default function Home() {
   const { activeNotesArray, notes } = useNoteStore();
@@ -83,7 +85,7 @@ export default function Home() {
     .slice(0, 10);
 
   return (
-    <ScrollView className={`flex flex-1 flex-col rounded-lg gap-10 px-4`}>
+    <ScrollView className="flex flex-1 flex-col gap-10 rounded-lg px-4">
       <View className="flex flex-col gap-8 ">
         <Text className="text-3xl text-text">Relevant Notes </Text>
         <View className="flex ">
@@ -92,25 +94,28 @@ export default function Home() {
       </View>
 
       <View className="flex flex-row gap-8 pt-8 portrait:flex-col">
-        {sortedUniqueTags && (
-          <View className="min-w-[30%]">
-            <Text className="mb-8 text-3xl text-text">Tag Clusters </Text>
-            <FlatList
-              data={sortedUniqueTags}
-              contentContainerStyle={{ gap: 8 }}
-              renderItem={({ item }) => (
-                <Pressable
-                  onPress={() => router.push(`/cluster/${item.tag}`)}
-                  className="flex flex-col gap-2 rounded-2xl bg-secondary-850 p-4">
-                  <Text className="flex-1 text-xl text-text">{item.tag} Cluster </Text>
-                  <Text className="text-secondary-500">
-                    {item.count} Entri{item.count > 1 ? 'es' : 'y'}{' '}
-                  </Text>
-                </Pressable>
-              )}
-            />
-          </View>
-        )}
+        <View className="min-w-[30%]">
+          <Text className="mb-8 text-3xl text-text">Tag Clusters </Text>
+          <FlatList
+            data={sortedUniqueTags}
+            contentContainerStyle={{ gap: 8 }}
+            ListEmptyComponent={
+              <View>
+                <Text className="text-text">No tags to cluster, add some first</Text>
+              </View>
+            }
+            renderItem={({ item }) => (
+              <Pressable
+                onPress={() => router.push(`/cluster/${item.tag}`)}
+                className="flex flex-col gap-2 rounded-2xl bg-secondary-850 p-4">
+                <Text className="flex-1 text-xl text-text">{item.tag} Cluster </Text>
+                <Text className="text-secondary-500">
+                  {item.count} Entri{item.count > 1 ? 'es' : 'y'}{' '}
+                </Text>
+              </Pressable>
+            )}
+          />
+        </View>
         <View className="flex-1">
           {relevantTasks && <Text className="mb-8 text-3xl text-text">Relevant Tasks </Text>}
           <View className="flex ">
@@ -118,7 +123,15 @@ export default function Home() {
               <FlatList
                 data={relevantTasks}
                 className="rounded-2xl"
-                ListEmptyComponent={<Text> </Text>}
+                ListEmptyComponent={
+                  <View className="flex items-center">
+                    <Link
+                      className="rounded-xl bg-primary p-2 text-center color-background"
+                      href="/taskboard/new">
+                      No tasks, create a task board first
+                    </Link>
+                  </View>
+                }
                 contentContainerStyle={{ gap: 8 }}
                 renderItem={({ item: task }) => (
                   <Pressable

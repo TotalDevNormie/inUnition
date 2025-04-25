@@ -1,13 +1,14 @@
+import { AntDesign, Ionicons, MaterialIcons } from '@expo/vector-icons';
+import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from '@gorhom/bottom-sheet';
+import { router } from 'expo-router';
 import { useRef, useEffect, useCallback } from 'react';
 import { Pressable, Text, View } from 'react-native';
-import { router } from 'expo-router';
-import { AntDesign, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
-import { BottomSheetModal, BottomSheetModalProvider, BottomSheetView } from '@gorhom/bottom-sheet';
-import TaskColumn from '../../components/tasks/TaskColumn';
+
 import { TaskBoardParent, TaskBoardContent } from '../../components/tasks/TaskBoardParent';
-import TaskForm from '../../components/tasks/TaskForm';
 import TaskBoardSettings from '../../components/tasks/TaskBoardSettings';
+import TaskColumn from '../../components/tasks/TaskColumn';
+import TaskForm from '../../components/tasks/TaskForm';
 
 export default function Tasks() {
   return <TaskBoardParent TaskBoardContent={TaskBoardContentMobile} />;

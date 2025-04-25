@@ -1,13 +1,14 @@
+import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
+import DraggableList from 'react-draggable-list';
 import { Platform, Pressable, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import DraggableFlatList, { ScaleDecorator } from 'react-native-draggable-flatlist';
-import { TagsInput } from '../../components/TagsInput';
-import { useRouter } from 'expo-router';
 import { GestureHandlerRootView, ScrollView } from 'react-native-gesture-handler';
-import DraggableList from 'react-draggable-list';
-import { AntDesign, MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTaskBoardStore } from '../../utils/manageTaskBoards';
+
 import { useUserSettingsStore } from '../(tabs)/user';
+import { TagsInput } from '../../components/TagsInput';
+import { useTaskBoardStore } from '../../utils/manageTaskBoards';
 
 type ListItemProps = {
   dragHandleProps?: any;
@@ -249,14 +250,14 @@ export default function Task() {
             )}
           </View>
 
-          <Text className="mt-1 text-xs text-text/60">
+          <Text className="mb-4 mt-1 text-xs text-text/70">
             Drag to reorder. You can have up to 5 status types.{' '}
           </Text>
         </View>
 
         <TagsInput tags={tags} setTags={setTags} />
 
-        <Pressable onPress={handleSubmit} className="mb-8 rounded-lg bg-primary p-3 text-center">
+        <Pressable onPress={handleSubmit} className="my-8 rounded-lg bg-primary p-3 text-center">
           <Text className="text-center font-medium text-background">Create Task Board </Text>
         </Pressable>
       </ScrollView>

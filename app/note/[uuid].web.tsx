@@ -1,14 +1,16 @@
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { NotePage, NoteParent } from '../../components/notes/NoteParent';
-import { useCallback, useEffect, useRef, useState } from 'react';
-import NoteInput from '../../components/notes/NoteInput';
+import { AntDesign, Entypo, FontAwesome5 } from '@expo/vector-icons';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
-import { TagsInput } from '../../components/TagsInput';
-import DueDateInput from '../../components/DueDateInput';
-import { AntDesign, Entypo, FontAwesome5 } from '@expo/vector-icons';
 import { router } from 'expo-router';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+
+import DueDateInput from '../../components/DueDateInput';
+import { TagsInput } from '../../components/TagsInput';
+import NoteInput from '../../components/notes/NoteInput';
+import { NotePage, NoteParent } from '../../components/notes/NoteParent';
 import { useNoteStore } from '../../utils/manageNotes';
+
 import NoteSettings from '~/components/notes/NoteSettings';
 
 const Note = () => <NoteParent NotePageContent={NotePageContent} />;

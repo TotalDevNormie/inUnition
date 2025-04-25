@@ -1,6 +1,6 @@
+import { AntDesign } from '@expo/vector-icons';
 import { ReactNode } from 'react';
 import { Modal as RNModal, Pressable, Text, View } from 'react-native';
-import { AntDesign } from '@expo/vector-icons';
 
 type Props = {
   children: ReactNode;
@@ -11,11 +11,7 @@ type Props = {
 
 export default function Modal({ children, open, setOpen, title }: Props) {
   return (
-    <RNModal
-      visible={open}
-      transparent={true}
-      animationType="fade"
-      onRequestClose={() => setOpen(false)}>
+    <RNModal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
       <Pressable
         className="flex-1 items-center justify-center bg-background-950/50"
         onPress={() => setOpen(false)}>

@@ -1,7 +1,6 @@
-import React from 'react';
-import { Pressable, Text, View, StyleSheet, ActivityIndicator } from 'react-native';
-import { useState } from 'react';
 import { AntDesign } from '@expo/vector-icons';
+import React, { useState } from 'react';
+import { Pressable, Text, View, StyleSheet, ActivityIndicator } from 'react-native';
 
 interface GoogleSignInButtonProps {
   text?: string;

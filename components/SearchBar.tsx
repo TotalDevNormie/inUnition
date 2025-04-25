@@ -1,9 +1,16 @@
-import React, { useCallback, useRef, useState } from 'react';
-import { View, TextInput, Pressable, Text, ScrollView, Platform } from 'react-native';
+import React, { useState } from 'react';
+import {
+  View,
+  TextInput,
+  Pressable,
+  Text,
+  ScrollView,
+  Platform,
+  Modal as RNModal,
+} from 'react-native';
 import { FontAwesome5, AntDesign } from '@expo/vector-icons';
 import { useSearchStore, SearchItemType } from '../utils/useSearchStore';
-import Modal from '../components/Modal'; // Import the Modal component
-import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
+import Modal from '../components/Modal'; // Import the Modal component for web
 
 type Option<T> = { value: T; label: string };
 type SortValue = 'relevance' | 'updatedAt' | 'createdAt' | 'dueDate';
@@ -42,20 +49,6 @@ export default function SearchBar() {
   const availableTags = getAllTags();
 
   const [filtersVisible, setFiltersVisible] = useState(false);
-
-  // Reference for the bottom sheet
-  const bottomSheetRef = useRef<BottomSheetModal>(null);
-
-  // Callbacks for bottom sheet
-  const showBottomSheet = useCallback(() => {
-    bottomSheetRef.current?.present();
-  }, []);
-
-  const handleSheetChanges = useCallback((index: number) => {
-    if (index === -1) {
-      setFiltersVisible(false);
-    }
-  }, []);
 
   // Create combined sort options from sortBy and sortDirection
   const getSortValue = (): string => {
@@ -132,18 +125,9 @@ export default function SearchBar() {
 
   const filtersActive = areFiltersActive();
 
-  // Function to show filters based on platform
-  const showFilters = () => {
-    setFiltersVisible(true);
-    if (Platform.OS !== 'web') {
-      showBottomSheet();
-    }
-  };
-
   // Filter content component - shared between modal and bottom sheet
   const FilterContent = () => (
     <ScrollView showsVerticalScrollIndicator={false}>
-      {/* Sort by */}
       <Text className="mb-2 text-lg font-medium text-text">Sort by </Text>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} className="-ml-2 mb-5">
         {sortOptions.map((opt) => (
@@ -154,11 +138,11 @@ export default function SearchBar() {
               search();
             }}
             className={`ml-2 rounded-full px-3 py-1.5 ${
-              getSortValue() === opt.value ? 'bg-primary' : 'bg-background-muted'
+              getSortValue() === opt.value ? 'bg-primary' : 'bg-accent'
             }`}>
             <Text
-              className={`text-sm ${getSortValue() === opt.value ? 'text-white' : 'text-text'}`}>
-              {opt.label}{' '}
+              className={`text-sm ${getSortValue() === opt.value ? 'text-background' : 'text-text'}`}>
+              {opt.label} {' '}
             </Text>
           </Pressable>
         ))}
@@ -172,13 +156,13 @@ export default function SearchBar() {
             key={opt.value}
             onPress={() => toggleType(opt.value)}
             className={`mb-2 ml-2 rounded-full px-3 py-1.5 ${
-              selectedTypes.includes(opt.value) ? 'bg-primary' : 'bg-background-muted'
+              selectedTypes.includes(opt.value) ? 'bg-primary' : 'bg-accent'
             }`}>
             <Text
               className={`text-sm ${
-                selectedTypes.includes(opt.value) ? 'text-white' : 'text-text'
+                selectedTypes.includes(opt.value) ? 'text-background' : 'text-text'
               }`}>
-              {opt.label}{' '}
+              {opt.label} {' '}
             </Text>
           </Pressable>
         ))}
@@ -190,36 +174,36 @@ export default function SearchBar() {
         <Pressable
           onPress={() => toggleDueDate('overdue')}
           className={`mb-2 ml-2 rounded-full px-3 py-1.5 ${
-            dueDateFilter === 'overdue' ? 'bg-primary' : 'bg-background-muted'
+            dueDateFilter === 'overdue' ? 'bg-primary' : 'bg-accent'
           }`}>
-          <Text className={`text-sm ${dueDateFilter === 'overdue' ? 'text-white' : 'text-text'}`}>
+          <Text className={`text-sm ${dueDateFilter === 'overdue' ? 'text-background' : 'text-text'}`}>
             Overdue
           </Text>
         </Pressable>
         <Pressable
           onPress={() => toggleDueDate('today')}
           className={`mb-2 ml-2 rounded-full px-3 py-1.5 ${
-            dueDateFilter === 'today' ? 'bg-primary' : 'bg-background-muted'
+            dueDateFilter === 'today' ? 'bg-primary' : 'bg-accent'
           }`}>
-          <Text className={`text-sm ${dueDateFilter === 'today' ? 'text-white' : 'text-text'}`}>
+          <Text className={`text-sm ${dueDateFilter === 'today' ? 'text-background' : 'text-text'}`}>
             Due Today
           </Text>
         </Pressable>
         <Pressable
           onPress={() => toggleDueDate('upcoming')}
           className={`mb-2 ml-2 rounded-full px-3 py-1.5 ${
-            dueDateFilter === 'upcoming' ? 'bg-primary' : 'bg-background-muted'
+            dueDateFilter === 'upcoming' ? 'bg-primary' : 'bg-accent'
           }`}>
-          <Text className={`text-sm ${dueDateFilter === 'upcoming' ? 'text-white' : 'text-text'}`}>
+          <Text className={`text-sm ${dueDateFilter === 'upcoming' ? 'text-background' : 'text-text'}`}>
             Upcoming
           </Text>
         </Pressable>
         <Pressable
           onPress={() => toggleDueDate('none')}
           className={`mb-2 ml-2 rounded-full px-3 py-1.5 ${
-            dueDateFilter === 'none' ? 'bg-primary' : 'bg-background-muted'
+            dueDateFilter === 'none' ? 'bg-primary' : 'bg-accent'
           }`}>
-          <Text className={`text-sm ${dueDateFilter === 'none' ? 'text-white' : 'text-text'}`}>
+          <Text className={`text-sm ${dueDateFilter === 'none' ? 'text-background' : 'text-text'}`}>
             No Due Date
           </Text>
         </Pressable>
@@ -234,10 +218,10 @@ export default function SearchBar() {
               key={tag}
               onPress={() => toggleTag(tag)}
               className={`mb-2 ml-2 rounded-full px-3 py-1.5 ${
-                selectedTags.includes(tag) ? 'bg-primary' : 'bg-background-muted'
+                selectedTags.includes(tag) ? 'bg-primary' : 'bg-accent'
               }`}>
               <Text
-                className={`text-sm ${selectedTags.includes(tag) ? 'text-white' : 'text-text'}`}>
+                className={`text-sm ${selectedTags.includes(tag) ? 'text-background' : 'text-text'}`}>
                 {tag}
               </Text>
             </Pressable>
@@ -249,7 +233,7 @@ export default function SearchBar() {
 
       {/* Reset */}
       <Pressable onPress={resetFilters} className="mb-4 mt-2 rounded-lg bg-accent py-3">
-        <Text className="text-center text-base font-bold text-white">Reset Filters & Sort</Text>
+        <Text className="text-center text-base font-bold text-text">Reset Filters & Sort</Text>
       </Pressable>
     </ScrollView>
   );
@@ -272,7 +256,7 @@ export default function SearchBar() {
           autoCapitalize="none"
           returnKeyType="search"
         />
-        <Pressable onPress={showFilters} className="p-1">
+        <Pressable onPress={() => setFiltersVisible(true)} className="p-1">
           <View className={`rounded-md p-2 ${filtersActive ? 'bg-primary' : 'bg-transparent'}`}>
             <FontAwesome5 name="sliders-h" size={18} color={filtersActive ? '#fff' : '#888'} />
           </View>
@@ -288,32 +272,25 @@ export default function SearchBar() {
         </Modal>
       )}
 
-      {/* Mobile Bottom Sheet */}
+      {/* Mobile Modal */}
       {Platform.OS !== 'web' && (
-        <BottomSheetModal
-          ref={bottomSheetRef}
-          onChange={handleSheetChanges}
-          index={0}
-          enablePanDownToClose
-          handleStyle={{
-            backgroundColor: '#121517',
-            borderTopWidth: 2,
-            borderTopColor: '#313749',
-          }}
-          handleIndicatorStyle={{ backgroundColor: '#313749' }}
-          backgroundStyle={{ backgroundColor: '#121517' }}>
-          <BottomSheetView>
-            <View className="p-4">
+        <RNModal
+          visible={filtersVisible}
+          animationType="slide"
+          transparent={true}
+          onRequestClose={() => setFiltersVisible(false)}>
+          <View className="flex-1 justify-end bg-black/50">
+            <View className="max-h-[80%] rounded-t-xl bg-background p-4">
               <View className="mb-4 flex-row items-center justify-between border-b border-secondary-850 pb-2">
                 <Text className="text-xl font-semibold text-text">Filters & Sorting</Text>
-                <Pressable onPress={() => bottomSheetRef.current?.dismiss()}>
+                <Pressable onPress={() => setFiltersVisible(false)}>
                   <AntDesign name="close" size={24} color="#fff" />
                 </Pressable>
               </View>
               <FilterContent />
             </View>
-          </BottomSheetView>
-        </BottomSheetModal>
+          </View>
+        </RNModal>
       )}
     </View>
   );

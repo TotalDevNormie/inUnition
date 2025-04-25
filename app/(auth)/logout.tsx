@@ -1,6 +1,7 @@
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Text, View, ActivityIndicator } from 'react-native';
+
 import { useAuthStore } from '../../utils/useAuthStore';
 
 export default function Logout() {

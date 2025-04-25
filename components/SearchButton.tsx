@@ -1,8 +1,9 @@
+import { FontAwesome5 } from '@expo/vector-icons';
 import { useState } from 'react';
 import { Pressable, View, Platform, Text } from 'react-native';
-import { FontAwesome5 } from '@expo/vector-icons';
-import WebSearchPopup from './WebSearchPopup';
+
 import MobileSearchPopup from './MobileSearchPopup';
+import WebSearchPopup from './WebSearchPopup';
 import { useSearchStore } from '../utils/useSearchStore';
 
 export default function SearchButton({ collapsed = false }: { collapsed?: boolean }) {

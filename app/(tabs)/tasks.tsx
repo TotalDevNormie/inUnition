@@ -1,11 +1,10 @@
-import MasonryList from 'reanimated-masonry-list';
-import { Dimensions, Platform, Pressable, View } from 'react-native';
-import { Text } from 'react-native';
-import { Link, router } from 'expo-router';
 import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
+import { Link, router } from 'expo-router';
 import moment from 'moment';
-import { useTaskBoardStore } from '../../utils/manageTaskBoards';
-import { TaskBoard } from '../../utils/manageTaskBoards';
+import { Dimensions, Platform, Pressable, View, Text } from 'react-native';
+import MasonryList from 'reanimated-masonry-list';
+
+import { useTaskBoardStore, TaskBoard } from '../../utils/manageTaskBoards';
 
 export default function tasks() {
   const windowWidth = Dimensions.get('window').width;
@@ -25,7 +24,7 @@ export default function tasks() {
   );
 
   return (
-    <View className={`mb-2 flex flex-1 flex-col overflow-hidden rounded-xl px-4`}>
+    <View className="mb-2 flex flex-1 flex-col overflow-hidden rounded-xl px-4">
       <View className="mb-4 flex flex-row items-center justify-between gap-4">
         <Text className="text-3xl text-text">Task Boards </Text>
         {Platform.OS == 'web' && <NewButton />}
@@ -42,7 +41,7 @@ export default function tasks() {
         />
       </View>
       {Platform.OS !== 'web' && (
-        <View className="absolute bottom-0 right-0">
+        <View className="absolute bottom-0 right-4">
           <NewButton />
         </View>
       )}
@@ -53,7 +52,7 @@ export default function tasks() {
 const TaskGroupCard = ({ taskGroup }: { taskGroup: TaskBoard }) => {
   return (
     <Pressable onPress={() => router.push(`/taskboard/${taskGroup.uuid}`)} key={taskGroup.uuid}>
-      <View className={`mt-4 flex flex-col gap-4 rounded-2xl bg-secondary-850 p-4`}>
+      <View className="mt-4 flex flex-col gap-4 rounded-2xl bg-secondary-850 p-4">
         {taskGroup?.name && <Text className="text-xl text-text">{taskGroup?.name} </Text>}
         {taskGroup?.description && <Text className="text-text ">{taskGroup.description} </Text>}
         <View>

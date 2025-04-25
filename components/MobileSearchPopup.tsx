@@ -1,3 +1,6 @@
+import { FontAwesome5 } from '@expo/vector-icons';
+import { Link, router } from 'expo-router';
+import moment from 'moment';
 import React, { useEffect, useRef } from 'react';
 import {
   View,
@@ -12,10 +15,8 @@ import {
   SafeAreaView,
   ActivityIndicator,
 } from 'react-native';
-import { FontAwesome5 } from '@expo/vector-icons';
+
 import { useSearchStore, SearchItem, SearchItemType } from '../utils/useSearchStore';
-import { router } from 'expo-router';
-import moment from 'moment';
 
 // Process search results for display
 type ProcessedResult = {
@@ -196,19 +197,16 @@ export default function MobileSearchPopup({ visible, setVisible }: MobileSearchP
     <Modal
       visible={visible}
       animationType="none"
-      transparent={true}
+      transparent
       onRequestClose={() => setVisible(false)}>
       <Animated.View
         style={[styles.container, { transform: [{ translateY }] }]}
         className="bg-background">
         <SafeAreaView style={{ flex: 1 }}>
-          {/* Header */}
           <View className="border-border flex-row items-center border-b p-2">
-            {/* Back Button */}
             <Pressable onPress={() => setVisible(false)} className="mr-1 p-2">
               <FontAwesome5 name="arrow-left" size={20} color="#888" />
             </Pressable>
-            {/* Search Input Container */}
             <View className="bg-background-muted flex-1 flex-row items-center rounded-full px-3">
               <FontAwesome5 name="search" size={16} color="#888" className="mr-2" />
               <TextInput
@@ -234,6 +232,13 @@ export default function MobileSearchPopup({ visible, setVisible }: MobileSearchP
 
           {/* Results Area */}
           <View style={{ flex: 1 }}>
+            <View>
+              <Link href="/search" className="text-primary">
+                {' '}
+                Go To Advanced Search
+              </Link>
+            </View>
+
             {isSearching ? (
               <View className="flex-1 items-center justify-center">
                 <ActivityIndicator size="small" className="text-secondary" />

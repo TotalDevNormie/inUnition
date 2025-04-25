@@ -1,9 +1,10 @@
-import React from 'react';
-import { View, Text, Pressable } from 'react-native';
-import MasonryList from 'reanimated-masonry-list';
 import { FontAwesome5 } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import moment from 'moment';
+import React from 'react';
+import { View, Text, Pressable } from 'react-native';
+import MasonryList from 'reanimated-masonry-list';
+
 import { useSearchStore, SearchItem, SearchItemType } from '../utils/useSearchStore';
 
 type ProcessedResult = {
@@ -78,7 +79,7 @@ export default function SearchResults() {
             router.push(`/taskboard/${data.uuid}`);
           }
         }}
-        className="mb-4 ml-4 rounded-xl bg-secondary-850 p-4">
+        className="mb-4 rounded-xl bg-secondary-850 p-4">
         <View className="mb-2 flex-row items-center">
           <View className="mr-3 h-8 w-8 items-center justify-center rounded-full bg-primary">
             <FontAwesome5 name={getIcon(type)} size={16} color="#fff" />
@@ -107,17 +108,18 @@ export default function SearchResults() {
 
         {data?.tags && (
           <View className="mt-2 flex-row flex-wrap">
-            {data.tags.map((t: string, i: number) => (
-              <View key={i} className="mb-1 mr-2 rounded-full bg-secondary-800 px-2 py-1">
-                <Text className="text-xs text-secondary">{t} </Text>
-              </View>
-            ))}
+            <Text className="text-xs text-text/70">{data.tags.join(', ')} </Text>
           </View>
         )}
 
         {data.endsAt && (
           <View className="mt-2 flex-row items-center">
-            <FontAwesome5 name="calendar-alt" size={12} className="mr-1 text-secondary" />
+            <FontAwesome5
+              name="calendar-alt"
+              color="#2CC3A5"
+              size={12}
+              className="mr-1 text-secondary"
+            />
             <Text className="text-xs text-primary">Due {moment(data.endsAt).fromNow()} </Text>
           </View>
         )}
@@ -130,9 +132,9 @@ export default function SearchResults() {
       data={processedResults}
       renderItem={renderItem}
       keyExtractor={(i) => `${i.type}-${i.item.uuid}`}
-      contentContainerStyle={{ padding: 8 }}
+      style={{ gap: 16 }}
       ListHeaderComponent={
-        <Text className="mb-4 text-lg text-text">
+        <Text className="text-lg text-text">
           {processedResults.length} {processedResults.length === 1 ? 'result' : 'results'}{' '}
           found{' '}
         </Text>

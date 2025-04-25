@@ -1,7 +1,7 @@
 import { useCallback, useEffect } from 'react';
 import { Text, View } from 'react-native';
+
 import 'react-native-get-random-values';
-import { Task, useTaskStore } from '../../utils/manageTasks';
 import Animated, {
   useAnimatedStyle,
   useSharedValue,
@@ -9,7 +9,9 @@ import Animated, {
   useAnimatedRef,
   AnimatedRef,
 } from 'react-native-reanimated';
+
 import DraggableTask from './DraggableTask';
+import { Task, useTaskStore } from '../../utils/manageTasks';
 
 export type ColumnRefs = {
   [key: string]: AnimatedRef<Animated.View>;

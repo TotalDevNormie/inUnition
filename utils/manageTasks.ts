@@ -1,12 +1,16 @@
+import NetInfo from '@react-native-community/netinfo';
+import { MMKV } from 'react-native-mmkv';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { MMKV } from 'react-native-mmkv';
-import NetInfo from '@react-native-community/netinfo';
-import { useAuthStore } from './useAuthStore';
+
 import { useTaskBoardStore } from './manageTaskBoards';
+import { useAuthStore } from './useAuthStore';
+
 import 'react-native-get-random-values';
 import { v4 as uuidv4 } from 'uuid';
+
 import { db } from '../firebaseConfig';
+
 import firestore from '@react-native-firebase/firestore';
 import { collection, query, where, onSnapshot } from 'firebase/firestore';
 import { Platform } from 'react-native';

@@ -1,15 +1,15 @@
-import { Link, Navigator, Slot, usePathname } from 'expo-router';
-import { Pressable, ScrollView, View, Text, useWindowDimensions } from 'react-native';
-import DarkLogoFull from '../assets/darkLogoFull.svg';
-import { TabRouter } from '@react-navigation/native';
-import NavLink from './NavLink';
 import { Feather, Ionicons, MaterialIcons, Octicons } from '@expo/vector-icons';
-import { useAuthStore } from '../utils/useAuthStore';
-import { useSidebarStore } from '../utils/useSidebarStore';
-import SearchPopup from './WebSearchPopup';
+import { TabRouter } from '@react-navigation/native';
+import { Link, Navigator, Slot, usePathname, router } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { router } from 'expo-router';
+import { Pressable, ScrollView, View, Text, useWindowDimensions } from 'react-native';
+
+import NavLink from './NavLink';
+import SearchPopup from './WebSearchPopup';
+import DarkLogoFull from '../assets/darkLogoFull.svg';
+import { useAuthStore } from '../utils/useAuthStore';
 import { useSearchStore } from '../utils/useSearchStore';
+import { useSidebarStore } from '../utils/useSidebarStore';
 
 export default function WebTabLayout() {
   // Use the Zustand store for collapsed state
@@ -67,7 +67,7 @@ export default function WebTabLayout() {
         )}
 
         <ScrollView
-          className={`specific-issue flex-1 rounded-lg p-4`}
+          className="specific-issue flex-1 rounded-lg p-4"
           contentContainerStyle={{ flexGrow: 1 }}>
           <Slot />
         </ScrollView>

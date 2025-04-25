@@ -1,15 +1,16 @@
 import NetInfo from '@react-native-community/netinfo';
 import 'react-native-get-random-values';
+import firestore from '@react-native-firebase/firestore';
+import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { Platform } from 'react-native';
+import { MMKV } from 'react-native-mmkv';
 import { v4 as uuidv4 } from 'uuid';
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { MMKV } from 'react-native-mmkv';
-import { useAuthStore } from './useAuthStore';
+
 import { useTaskStore } from './manageTasks'; // Import the task store
+import { useAuthStore } from './useAuthStore';
 import { db } from '../firebaseConfig';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
-import firestore from '@react-native-firebase/firestore';
-import { Platform } from 'react-native';
 
 const storage = new MMKV();
 const TASK_BOARDS = 'taskBoards';

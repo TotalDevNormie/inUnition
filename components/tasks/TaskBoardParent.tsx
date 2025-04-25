@@ -1,10 +1,11 @@
-import { useState, useEffect, useCallback, useRef } from 'react';
 import { Redirect, useLocalSearchParams } from 'expo-router';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import 'react-native-get-random-values';
-import { parse } from 'uuid';
-import { Task, useTaskStore } from '../../utils/manageTasks';
-import { useTaskBoardStore } from '../../utils/manageTaskBoards';
 import Animated, { AnimatedRef } from 'react-native-reanimated';
+import { parse } from 'uuid';
+
+import { useTaskBoardStore } from '../../utils/manageTaskBoards';
+import { Task, useTaskStore } from '../../utils/manageTasks';
 
 export type ColumnRefs = Record<string, AnimatedRef<Animated.View>>;
 
@@ -42,14 +43,14 @@ type TaskBoardParentProps = {
   };
 };
 
-export const TaskBoardParent = ({ 
-  TaskBoardContent, 
-  propUuid, 
-  externalControls 
+export const TaskBoardParent = ({
+  TaskBoardContent,
+  propUuid,
+  externalControls,
 }: TaskBoardParentProps) => {
   const [isInvalidUUID, setIsInvalidUUID] = useState(false);
   const [columnRefs, setColumnRefs] = useState<ColumnRefs>({});
-  
+
   // Only use internal state if external controls aren't provided
   const [taskEdit, setTaskEdit] = useState<false | Task>(false);
   const [openModal, setOpenModal] = useState<'newTask' | 'settings' | false>(false);
@@ -76,14 +77,17 @@ export const TaskBoardParent = ({
   }, []);
 
   // Use internal or external handlers based on what's provided
-  const handleEditTask = useCallback((task: Task) => {
-    if (externalControls) {
-      externalControls.handleEditTask(task);
-    } else {
-      setTaskEdit(task);
-      setOpenModal('newTask');
-    }
-  }, [externalControls]);
+  const handleEditTask = useCallback(
+    (task: Task) => {
+      if (externalControls) {
+        externalControls.handleEditTask(task);
+      } else {
+        setTaskEdit(task);
+        setOpenModal('newTask');
+      }
+    },
+    [externalControls]
+  );
 
   const handleTaskComplete = useCallback(() => {
     if (!externalControls) {
@@ -114,16 +118,14 @@ export const TaskBoardParent = ({
   const taskBoard = getTaskBoard(uuid as string);
 
   // Use external or internal state values
-  const effectiveTaskEdit = externalControls && externalControls.isActive 
-    ? externalControls.taskEdit 
-    : taskEdit;
-    
-  const effectiveOpenModal = externalControls && externalControls.isActive
-    ? externalControls.openModal
-    : openModal;
+  const effectiveTaskEdit =
+    externalControls && externalControls.isActive ? externalControls.taskEdit : taskEdit;
+
+  const effectiveOpenModal =
+    externalControls && externalControls.isActive ? externalControls.openModal : openModal;
 
   const effectiveSetTaskEdit = externalControls ? () => {} : setTaskEdit;
-  const effectiveSetOpenModal = externalControls 
+  const effectiveSetOpenModal = externalControls
     ? (val: 'newTask' | 'settings' | false) => {
         if (val === 'newTask') externalControls.handleAddTask();
         else if (val === 'settings') externalControls.handleOpenSettings();
