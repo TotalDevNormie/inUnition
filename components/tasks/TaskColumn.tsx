@@ -38,7 +38,7 @@ export default function TaskColumn({
   const isDragging = useSharedValue(false);
 
   useEffect(() => {
-    updateColumnRef(status, columnRef);
+    runOnJS(updateColumnRef)(status, columnRef);
   }, [status, columnRef, updateColumnRef]);
 
   const onDragUpdate = () => {

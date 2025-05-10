@@ -14,7 +14,7 @@ export default function Notes() {
   const { activeNotesArray } = useNoteStore();
   const { width } = useWindowDimensions(); // Use the hook
 
-  const maxColumnWidth = 200;
+  const maxColumnWidth = width > 500 ? 300 : 175;
   const columnCount = Math.max(1, Math.floor(width / maxColumnWidth)); // Ensure at least 1 column
 
   const newNote = () => {

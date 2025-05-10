@@ -440,7 +440,7 @@ export default function User() {
   }
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <>
       <ScrollView className="flex-1">
         <View className="mx-auto w-full max-w-3xl p-4">
           {/* Profile Header */}
@@ -707,6 +707,6 @@ export default function User() {
           {modalActions}
         </View>
       </Modal>
-    </GestureHandlerRootView>
+    </>
   );
 }

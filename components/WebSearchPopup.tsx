@@ -2,20 +2,8 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import moment from 'moment';
 import { useEffect, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  Modal,
-  Pressable,
-  FlatList,
-  Platform,
-  ActivityIndicator,
-} from 'react-native';
+import { View, Text, TextInput, Modal, Pressable, FlatList, Platform } from 'react-native';
 
-import { Note } from '../utils/manageNotes';
-import { TaskBoard } from '../utils/manageTaskBoards';
-import { Task } from '../utils/manageTasks';
 import { useSearchStore, SearchItem, SearchItemType } from '../utils/useSearchStore';
 
 type SearchResult = {
@@ -34,7 +22,6 @@ export default function SearchPopup() {
   const inputRef = useRef<TextInput>(null);
   const flatListRef = useRef<FlatList<any>>(null);
 
-  // Process search results to match the expected format
   useEffect(() => {
     if (searchTerm.trim() === '') {
       setProcessedResults([]);
@@ -42,7 +29,6 @@ export default function SearchPopup() {
     }
 
     const results: SearchResult[] = searchResults.map((item) => {
-      // Extract content for matching
       let contentText = '';
       if (item.content) {
         contentText = item.content;
@@ -50,7 +36,6 @@ export default function SearchPopup() {
         contentText = item.description;
       }
 
-      // Create match object
       const matches = [];
       if (contentText) {
         const lowerContent = contentText.toLowerCase();
@@ -58,18 +43,15 @@ export default function SearchPopup() {
         const index = lowerContent.indexOf(lowerQuery);
 
         if (index >= 0) {
-          // Get context around the match
           const start = Math.max(0, index - 30);
           const end = Math.min(lowerContent.length, index + searchTerm.length + 70);
           let matchText = contentText.substring(start, end);
 
-          // Add ellipsis if needed
           if (start > 0) matchText = '...' + matchText;
           if (end < contentText.length) matchText = matchText + '...';
 
           matches.push({ text: matchText });
         } else {
-          // If no direct match in content, just use the beginning
           matches.push({
             text: contentText.substring(0, 100) + (contentText.length > 100 ? '...' : ''),
           });
@@ -104,7 +86,7 @@ export default function SearchPopup() {
   const handleKeyDown = (e: KeyboardEvent) => {
     if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
       e.preventDefault();
-      setVisible(true);
+      setVisible(!visible);
       return;
     }
     if (!visible) return;
@@ -277,7 +259,7 @@ export default function SearchPopup() {
           <Pressable
             className="overflow-hidden rounded-lg bg-background shadow-lg"
             onPress={(e) => e.stopPropagation()}>
-            <View className="border-border flex-row items-center border-b px-2 py-1">
+            <View className="flex-row items-center px-2 py-1">
               <FontAwesome5 name="search" size={18} className="mx-2 text-text" />
               <TextInput
                 ref={inputRef}
@@ -300,15 +282,17 @@ export default function SearchPopup() {
                   <FontAwesome5 name="times-circle" size={18} color="#888" />
                 </Pressable>
               )}
-              <Text className="bg-background-muted ml-2 mr-1 rounded px-1.5 py-0.5 text-xs text-text">
+              <Pressable
+                className="bg-background-muted ml-2 mr-1 rounded px-1.5 py-0.5 text-xs text-text"
+                onPress={() => setVisible(false)}>
                 ESC{' '}
-              </Text>
+              </Pressable>
             </View>
 
             <View className="max-h-[400px] min-h-[60px]">
               {processedResults.length === 0 ? (
                 <View className="min-h-[60px] items-center justify-center p-4">
-                  <Text className="text-text-secondary">
+                  <Text className="text-text">
                     {searchTerm.trim() ? 'No results found' : 'Type to search'}{' '}
                   </Text>
                 </View>
@@ -328,7 +312,7 @@ export default function SearchPopup() {
               )}
             </View>
 
-            <View className="border-border flex-row items-center justify-between border-t p-3">
+            <View className="flex-row items-center justify-between p-3">
               <View className="flex-row items-center space-x-4">
                 <Text className="text-xs text-text">
                   <Text className="font-bold text-text">↑↓ </Text> to navigate{' '}

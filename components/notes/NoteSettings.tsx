@@ -15,15 +15,13 @@ type Props = {
 
 export default function NoteSettings({ uuid }: Props) {
   const { deleteNote, saveNote, notes } = useNoteStore();
-  const [tags, setTags] = useState<string[]>([]);
-  const [dueDate, setDueDate] = useState('');
+  const [tags, setTags] = useState<string[]>(notes[uuid]?.tags || []);
+  const [dueDate, setDueDate] = useState(notes[uuid]?.endsAt || '');
 
   const isFirstRender = useRef(true);
 
   useEffect(() => {
     if (isFirstRender.current) {
-      setTags(notes[uuid]?.tags || []);
-      setDueDate(notes[uuid]?.endsAt || '');
       isFirstRender.current = false;
       return;
     }

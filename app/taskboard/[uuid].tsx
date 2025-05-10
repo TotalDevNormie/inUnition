@@ -63,91 +63,89 @@ export const TaskBoardContentMobile: TaskBoardContent = ({
 
   return (
     <BottomSheetModalProvider>
-      <GestureHandlerRootView>
-        <View className="flex flex-col gap-8 p-4">
-          <View className="flex flex-row justify-between">
-            <Pressable onPress={() => router.back()}>
+      <View className="flex flex-col gap-8 p-4">
+        <View className="flex flex-row justify-between">
+          <Pressable onPress={() => router.back()}>
+            <Text className="text-text">
+              <AntDesign name="arrowleft" size={24} />{' '}
+            </Text>
+          </Pressable>
+          <View className="flex flex-row gap-2">
+            <Pressable
+              className="p-2"
+              onPress={() => {
+                setOpenModal(openModal !== 'newTask' ? 'newTask' : false);
+                setTaskEdit(false);
+              }}>
               <Text className="text-text">
-                <AntDesign name="arrowleft" size={24} />{' '}
+                <MaterialIcons name="add-task" size={24} />{' '}
               </Text>
             </Pressable>
-            <View className="flex flex-row gap-2">
-              <Pressable
-                className="p-2"
-                onPress={() => {
-                  setOpenModal(openModal !== 'newTask' ? 'newTask' : false);
-                  setTaskEdit(false);
-                }}>
-                <Text className="text-text">
-                  <MaterialIcons name="add-task" size={24} />{' '}
-                </Text>
-              </Pressable>
-              <Pressable
-                className="p-2"
-                onPress={() => {
-                  setOpenModal(openModal !== 'settings' ? 'settings' : false);
-                }}>
-                <Text className="text-text">
-                  <Ionicons name="settings" size={24} />{' '}
-                </Text>
-              </Pressable>
-            </View>
+            <Pressable
+              className="p-2"
+              onPress={() => {
+                setOpenModal(openModal !== 'settings' ? 'settings' : false);
+              }}>
+              <Text className="text-text">
+                <Ionicons name="settings" size={24} />{' '}
+              </Text>
+            </Pressable>
           </View>
-          <ScrollView>
-            <View className="flex flex-row items-center gap-2">
-              <Text className="grow text-2xl text-text">{taskBoard.name} </Text>
-              <Text className="grow text-text">{taskBoard.description} </Text>
-            </View>
-
-            <View className="flex flex-wrap gap-2 portrait:flex-col landscape:flex-row">
-              {taskBoard.statusTypes?.map((status) => (
-                <TaskColumn
-                  key={status}
-                  status={status}
-                  tasks={tasks.filter((task) => task.completionStatus === status)}
-                  onDragEnd={handleDragEnd}
-                  updateColumnRef={updateColumnRef}
-                  editTask={handleEditTask}
-                  columnRefs={columnRefs}
-                />
-              ))}
-            </View>
-          </ScrollView>
-
-          <BottomSheetModal
-            ref={newTaskSheet}
-            onChange={handleNewTaskSheetChanges}
-            enablePanDownToClose
-            handleStyle={{
-              backgroundColor: '#121517',
-              borderTopWidth: 2,
-              borderTopColor: '#313749',
-            }}
-            handleIndicatorStyle={{ backgroundColor: '#313749' }}
-            backgroundStyle={{ backgroundColor: '#121517' }}>
-            <BottomSheetView>
-              <TaskForm taskEdit={taskEdit} boardUuid={uuid} onComplete={handleTaskComplete} />
-            </BottomSheetView>
-          </BottomSheetModal>
-
-          <BottomSheetModal
-            ref={settingsSheet}
-            onChange={handleSettingsSheetChanges}
-            index={0}
-            enablePanDownToClose
-            handleStyle={{
-              backgroundColor: '#121517',
-              borderTopWidth: 2,
-              borderTopColor: '#313749',
-            }}
-            handleIndicatorStyle={{ backgroundColor: '#313749' }}
-            backgroundStyle={{ backgroundColor: '#121517' }}>
-            <BottomSheetView>
-              <TaskBoardSettings boardUuid={uuid} onComplete={handleSettingsComplete} />
-            </BottomSheetView>
-          </BottomSheetModal>
         </View>
-      </GestureHandlerRootView>
+        <ScrollView>
+          <View className="flex flex-row items-center gap-2">
+            <Text className="grow text-2xl text-text">{taskBoard.name} </Text>
+            <Text className="grow text-text">{taskBoard.description} </Text>
+          </View>
+
+          <View className="flex flex-wrap gap-2 portrait:flex-col landscape:flex-row">
+            {taskBoard.statusTypes?.map((status) => (
+              <TaskColumn
+                key={status}
+                status={status}
+                tasks={tasks.filter((task) => task.completionStatus === status)}
+                onDragEnd={handleDragEnd}
+                updateColumnRef={updateColumnRef}
+                editTask={handleEditTask}
+                columnRefs={columnRefs}
+              />
+            ))}
+          </View>
+        </ScrollView>
+
+        <BottomSheetModal
+          ref={newTaskSheet}
+          onChange={handleNewTaskSheetChanges}
+          enablePanDownToClose
+          handleStyle={{
+            backgroundColor: '#121517',
+            borderTopWidth: 2,
+            borderTopColor: '#313749',
+          }}
+          handleIndicatorStyle={{ backgroundColor: '#313749' }}
+          backgroundStyle={{ backgroundColor: '#121517' }}>
+          <BottomSheetView>
+            <TaskForm taskEdit={taskEdit} boardUuid={uuid} onComplete={handleTaskComplete} />
+          </BottomSheetView>
+        </BottomSheetModal>
+
+        <BottomSheetModal
+          ref={settingsSheet}
+          onChange={handleSettingsSheetChanges}
+          index={0}
+          enablePanDownToClose
+          handleStyle={{
+            backgroundColor: '#121517',
+            borderTopWidth: 2,
+            borderTopColor: '#313749',
+          }}
+          handleIndicatorStyle={{ backgroundColor: '#313749' }}
+          backgroundStyle={{ backgroundColor: '#121517' }}>
+          <BottomSheetView>
+            <TaskBoardSettings boardUuid={uuid} onComplete={handleSettingsComplete} />
+          </BottomSheetView>
+        </BottomSheetModal>
+      </View>
     </BottomSheetModalProvider>
   );
 };

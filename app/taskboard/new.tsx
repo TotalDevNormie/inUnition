@@ -95,7 +95,6 @@ export default function Task() {
         statusTypes,
         tags,
       });
-      console.log(uuid);
       router.replace(`/taskboard/${uuid}`);
     } catch (error) {
       console.error('Failed to create task board:', error);

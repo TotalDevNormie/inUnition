@@ -134,7 +134,7 @@ const Sidebar = ({
 
         <Pressable
           onPress={triggerSearch}
-          className={`mb-2 flex flex-row items-center ${collapsed ? 'justify-center' : ''} gap-2 rounded-lg bg-secondary p-2 transition-colors hover:bg-secondary/80`}>
+          className={`flex flex-row items-center ${collapsed ? 'justify-center' : ''} gap-2 rounded-lg p-2 transition-colors hover:bg-secondary`}>
           <Ionicons name="search" size={20} className="color-text" />
           {!collapsed && (
             <Text className="flex-1 text-text" numberOfLines={1}>

@@ -58,16 +58,12 @@ export default function DraggableTask({
         const stateArray = Object.keys(columnRefs);
         const stateIndex = stateArray.findIndex((key) => key === task.completionStatus);
 
-        console.log(stateIndex);
-
         if (translateX.value < -taskMeasurements.width / 3) {
-          console.log('left', (stateIndex - 1 + stateArray.length) % stateArray.length);
           runOnJS(onDragEnd)(
             task,
             stateArray[(stateIndex - 1 + stateArray.length) % stateArray.length]
           );
         } else if (translateX.value > taskMeasurements.width / 3) {
-          console.log('right', (stateIndex + 1 + stateArray.length) % stateArray.length);
           runOnJS(onDragEnd)(task, stateArray[(stateIndex + 1) % stateArray.length]);
         }
         translateX.value = withSpring(0);

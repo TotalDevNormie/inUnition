@@ -159,7 +159,7 @@ export default function MobileSearchPopup({ visible, setVisible }: MobileSearchP
       type === 'taskBoard' ? 'Board' : type.charAt(0).toUpperCase() + type.slice(1);
 
     return (
-      <Pressable onPress={() => navigateToItem(data)} className="border-border border-b px-4 py-3">
+      <Pressable onPress={() => navigateToItem(data)} className="px-4 py-3">
         <View className="flex-row items-center">
           {/* Icon */}
           <View className="mr-3 h-9 w-9 items-center justify-center rounded-full bg-primary">
@@ -203,7 +203,7 @@ export default function MobileSearchPopup({ visible, setVisible }: MobileSearchP
         style={[styles.container, { transform: [{ translateY }] }]}
         className="bg-background">
         <SafeAreaView style={{ flex: 1 }}>
-          <View className="border-border flex-row items-center border-b p-2">
+          <View className="flex-row items-center p-2">
             <Pressable onPress={() => setVisible(false)} className="mr-1 p-2">
               <FontAwesome5 name="arrow-left" size={20} color="#888" />
             </Pressable>
@@ -232,8 +232,8 @@ export default function MobileSearchPopup({ visible, setVisible }: MobileSearchP
 
           {/* Results Area */}
           <View style={{ flex: 1 }}>
-            <View>
-              <Link href="/search" className="text-primary">
+            <View className="mx-4">
+              <Link href="/search" className="text-primary" onPress={() => setVisible(false)}>
                 {' '}
                 Go To Advanced Search
               </Link>
@@ -243,7 +243,7 @@ export default function MobileSearchPopup({ visible, setVisible }: MobileSearchP
               <View className="flex-1 items-center justify-center">
                 <ActivityIndicator size="small" className="text-secondary" />
               </View>
-            ) : processedResults.length === 0 ? (
+            ) : processedResults.length === 0 || !searchTerm.trim() ? (
               // Show different message based on whether user has typed
               searchTerm.trim() ? (
                 <View className="flex-1 items-center justify-center p-6">
@@ -277,17 +277,6 @@ export default function MobileSearchPopup({ visible, setVisible }: MobileSearchP
                     </Text>
                   </View>
                 }
-                ListFooterComponent={
-                  processedResults.length > 0 ? (
-                    <Pressable
-                      onPress={handleSubmitSearch}
-                      className="border-border items-center border-t py-4">
-                      <Text className="font-medium text-primary">
-                        See all results for "{searchTerm}"{' '}
-                      </Text>
-                    </Pressable>
-                  ) : null
-                }
               />
             )}
           </View>
@@ -297,7 +286,6 @@ export default function MobileSearchPopup({ visible, setVisible }: MobileSearchP
   );
 }
 
-// Keep StyleSheet for non-Tailwind styles
 const styles = StyleSheet.create({
   container: {
     flex: 1,

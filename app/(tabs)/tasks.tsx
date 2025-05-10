@@ -1,19 +1,17 @@
 import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
 import { Link, router } from 'expo-router';
 import moment from 'moment';
-import { Dimensions, Platform, Pressable, View, Text } from 'react-native';
+import { Dimensions, Platform, Pressable, View, Text, useWindowDimensions } from 'react-native';
 import MasonryList from 'reanimated-masonry-list';
 
 import { useTaskBoardStore, TaskBoard } from '../../utils/manageTaskBoards';
 
 export default function tasks() {
-  const windowWidth = Dimensions.get('window').width;
-  const maxColumnWidth = 250;
-  const possibleColumnCount = Math.floor(windowWidth / maxColumnWidth);
-  const columnCount: number = possibleColumnCount < 2 ? 2 : possibleColumnCount;
+  const { width } = useWindowDimensions();
+  const maxColumnWidth = width > 500 ? 300 : 200;
+  const columnCount = Math.max(1, Math.floor(width / maxColumnWidth));
 
   const { activeTaskBoards } = useTaskBoardStore();
-  console.log(activeTaskBoards());
 
   const NewButton = () => (
     <Pressable onPress={() => router.push('/taskboard/new')}>
@@ -29,7 +27,6 @@ export default function tasks() {
         <Text className="text-3xl text-text">Task Boards </Text>
         {Platform.OS == 'web' && <NewButton />}
       </View>
-      <Text className="mb-4 text-3xl text-text"> </Text>
       <View className="borer-2 flex-1 overflow-hidden rounded-xl border-primary">
         <MasonryList
           data={activeTaskBoards()}

@@ -17,7 +17,7 @@ export default function SearchScreen() {
   }, [params.q]); // Intentionally omit setQuery from deps to avoid re-runs
   return (
     <View className="flex-1 bg-background p-4">
-      <Text className="mb-4 text-3xl font-bold text-text">Search </Text>
+      <Text className="mb-4 text-3xl font-bold text-text">Search</Text>
       <SearchBar />
       <View className="flex-1">
         <SearchResults />

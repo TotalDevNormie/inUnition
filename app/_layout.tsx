@@ -14,6 +14,7 @@ import { setupNotesListener } from '../utils/manageNotes';
 import { setupTaskBoardsListener } from '../utils/manageTaskBoards';
 import { setupTasksListener } from '../utils/manageTasks';
 import { useAuthStore } from '../utils/useAuthStore';
+import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
 const theme = {
   ...MD3DarkTheme,
@@ -72,11 +73,13 @@ export default function Layout() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <SafeAreaProvider>
-        <PaperProvider theme={theme}>
-          <Slot />
-        </PaperProvider>
-      </SafeAreaProvider>
+      <BottomSheetModalProvider>
+        <SafeAreaProvider>
+          <PaperProvider theme={theme}>
+            <Slot />
+          </PaperProvider>
+        </SafeAreaProvider>
+      </BottomSheetModalProvider>
     </GestureHandlerRootView>
   );
 }

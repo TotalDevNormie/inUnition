@@ -74,7 +74,7 @@ const Bar = () => {
 
 const Header = () => {
   return (
-    <View className="flex flex-row justify-between rounded-xl px-4">
+    <View className="flex flex-row items-center justify-between rounded-xl px-4">
       <View>
         <DarkLogo />
       </View>

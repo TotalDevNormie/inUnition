@@ -134,7 +134,7 @@ export default function SearchResults() {
       keyExtractor={(i) => `${i.type}-${i.item.uuid}`}
       style={{ gap: 16 }}
       ListHeaderComponent={
-        <Text className="text-lg text-text">
+        <Text className="mb-8 text-lg text-text">
           {processedResults.length} {processedResults.length === 1 ? 'result' : 'results'}{' '}
           found{' '}
         </Text>
