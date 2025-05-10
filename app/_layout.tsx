@@ -1,5 +1,6 @@
 import '../globalPolyfills';
 import * as NavigationBar from 'expo-navigation-bar';
+import { StatusBar } from 'expo-status-bar';
 import { Slot, Stack, useRouter } from 'expo-router';
 import { useEffect } from 'react';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
@@ -76,6 +77,7 @@ export default function Layout() {
       <BottomSheetModalProvider>
         <SafeAreaProvider>
           <PaperProvider theme={theme}>
+            <StatusBar style="light" backgroundColor="transparent" translucent={true} />
             <Slot />
           </PaperProvider>
         </SafeAreaProvider>
