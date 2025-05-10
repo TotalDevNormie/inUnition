@@ -1,5 +1,7 @@
 import '../globalPolyfills';
 import * as NavigationBar from 'expo-navigation-bar';
+import * as BackgroundTask from 'expo-background-task';
+import * as TaskManager from 'expo-task-manager';
 import { StatusBar } from 'expo-status-bar';
 import { Slot, Stack, useRouter } from 'expo-router';
 import { useEffect } from 'react';
@@ -11,9 +13,9 @@ import 'expo-dev-client';
 import '../global.css';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 
-import { setupNotesListener } from '../utils/manageNotes';
-import { setupTaskBoardsListener } from '../utils/manageTaskBoards';
-import { setupTasksListener } from '../utils/manageTasks';
+import { setupNotesListener, useNoteStore } from '../utils/manageNotes';
+import { setupTaskBoardsListener, useTaskBoardStore } from '../utils/manageTaskBoards';
+import { setupTasksListener, useTaskStore } from '../utils/manageTasks';
 import { useAuthStore } from '../utils/useAuthStore';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 
@@ -32,6 +34,27 @@ const theme = {
   dark: true,
 };
 
+const BACKGROUND_TASK_IDENTIFIER = 'sync-with-firebase';
+
+// Register and create the task so that it is available also when the background task screen
+// (a React component defined later in this example) is not visible.
+// Note: This needs to be called in the global scope, not in a React component.
+TaskManager.defineTask(BACKGROUND_TASK_IDENTIFIER, async () => {
+  try {
+    const { syncWithFirebase: noteSync } = useNoteStore.getState();
+    const { syncWithFirebase: taskSync } = useTaskStore.getState();
+    const { syncWithFirebase: taskBoardSync } = useTaskBoardStore.getState();
+    await noteSync();
+    await taskSync();
+    await taskBoardSync();
+    console.log('Synced with Firebase');
+  } catch (error) {
+    console.error('Failed to execute the background task:', error);
+    return BackgroundTask.BackgroundTaskResult.Failed;
+  }
+  return BackgroundTask.BackgroundTaskResult.Success;
+});
+
 const storage = new MMKV();
 
 export default function Layout() {
@@ -42,8 +65,13 @@ export default function Layout() {
     NavigationBar.setPositionAsync('absolute');
     NavigationBar.setBackgroundColorAsync('#000000');
     NavigationBar.setBehaviorAsync('overlay-swipe');
-
+    BackgroundTask.registerTaskAsync(BACKGROUND_TASK_IDENTIFIER);
     const unsubscribeAuth = initializeAuth();
+    const alreadyLaunched = storage.contains('alreadyLaunched');
+    if (!alreadyLaunched) {
+      // If 'alreadyLaunched' doesn't exist, it's the first launch
+      router.replace('/landing');
+    }
     return () => {
       if (typeof unsubscribeAuth === 'function') {
         unsubscribeAuth();
@@ -59,18 +87,9 @@ export default function Layout() {
     } else {
       setupTasksListener(null);
       setupNotesListener(null);
-      setupTaskBoardsListener(undefined);
+      setupTaskBoardsListener(null);
     }
   }, [user]);
-
-  useEffect(() => {
-    const alreadyLaunched = storage.contains('alreadyLaunched');
-
-    if (!alreadyLaunched) {
-      // If 'alreadyLaunched' doesn't exist, it's the first launch
-      router.replace('/landing');
-    }
-  }, []);
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>

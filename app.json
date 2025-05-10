@@ -28,16 +28,22 @@
             "newArchEnabled": true
           }
         }
-      ]
+      ],
+      "expo-background-task"
     ],
-    "platforms": ["web", "android"],
+    "platforms": [
+      "web",
+      "android"
+    ],
     "experiments": {
       "typedRoutes": true,
       "tsconfigPaths": true,
       "turboModules": true
     },
     "orientation": "portrait",
-    "assetBundlePatterns": ["**/*"],
+    "assetBundlePatterns": [
+      "**/*"
+    ],
     "android": {
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {

@@ -25,6 +25,7 @@
     "@types/uuid": "^10.0.0",
     "expensify-common": "^2.0.132",
     "expo": "~52.0.46",
+    "expo-background-task": "~0.1.4",
     "expo-build-properties": "^0.13.2",
     "expo-constants": "~17.0.8",
     "expo-dev-client": "~5.0.20",
