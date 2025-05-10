@@ -1,7 +1,7 @@
-import { FontAwesome5, MaterialIcons } from '@expo/vector-icons';
-import { Link, router } from 'expo-router';
+import { MaterialIcons } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import moment from 'moment';
-import { Dimensions, Platform, Pressable, View, Text, useWindowDimensions } from 'react-native';
+import { Platform, Pressable, View, Text, useWindowDimensions } from 'react-native';
 import MasonryList from 'reanimated-masonry-list';
 
 import { useTaskBoardStore, TaskBoard } from '../../utils/manageTaskBoards';

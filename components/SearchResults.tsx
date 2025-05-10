@@ -2,7 +2,7 @@ import { FontAwesome5 } from '@expo/vector-icons';
 import { router } from 'expo-router';
 import moment from 'moment';
 import React from 'react';
-import { View, Text, Pressable } from 'react-native';
+import { View, Text, Pressable, useWindowDimensions } from 'react-native';
 import MasonryList from 'reanimated-masonry-list';
 
 import { useSearchStore, SearchItem, SearchItemType } from '../utils/useSearchStore';
@@ -14,6 +14,9 @@ type ProcessedResult = {
 };
 
 export default function SearchResults() {
+  const { width } = useWindowDimensions();
+  const maxColumnWidth = width > 500 ? 300 : 200;
+  const columnCount = Math.max(1, Math.floor(width / maxColumnWidth));
   const { searchTerm, searchResults } = useSearchStore();
 
   // Process search results to match the expected format
@@ -114,12 +117,6 @@ export default function SearchResults() {
 
         {data.endsAt && (
           <View className="mt-2 flex-row items-center">
-            <FontAwesome5
-              name="calendar-alt"
-              color="#2CC3A5"
-              size={12}
-              className="mr-1 text-secondary"
-            />
             <Text className="text-xs text-primary">Due {moment(data.endsAt).fromNow()} </Text>
           </View>
         )}
@@ -131,6 +128,7 @@ export default function SearchResults() {
     <MasonryList
       data={processedResults}
       renderItem={renderItem}
+      numColumns={columnCount}
       keyExtractor={(i) => `${i.type}-${i.item.uuid}`}
       style={{ gap: 16 }}
       ListHeaderComponent={
