@@ -3,7 +3,8 @@ import { View, TextInput, Pressable, Text, ScrollView, Platform } from 'react-na
 import { FontAwesome5, AntDesign } from '@expo/vector-icons';
 import { useSearchStore, SearchItemType } from '../utils/useSearchStore';
 import Modal from '../components/Modal';
-import BottomSheet, { BottomSheetView } from '@gorhom/bottom-sheet';
+import BottomSheet, { BottomSheetModalProvider, BottomSheetView } from '@gorhom/bottom-sheet';
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 type Option<T> = { value: T; label: string };
 type SortValue = 'relevance' | 'updatedAt' | 'createdAt' | 'dueDate';
@@ -156,10 +157,7 @@ export default function SearchBar() {
             className={`ml-2 rounded-full px-3 py-1.5 ${
               getSortValue() === opt.value ? 'bg-primary' : 'bg-background-muted'
             }`}>
-            <Text
-              className={`text-sm ${getSortValue() === opt.value ? 'text-white' : 'text-text'}`}>
-              {opt.label}{' '}
-            </Text>
+            <Text className={`text-sm text-text`}>{opt.label} </Text>
           </Pressable>
         ))}
       </ScrollView>
@@ -256,6 +254,35 @@ export default function SearchBar() {
 
   return (
     <>
+      {Platform.OS !== 'web' && (
+        <BottomSheetModalProvider>
+          <BottomSheet
+            ref={bottomSheetRef}
+            onChange={handleSheetChanges}
+            index={-1}
+            enablePanDownToClose
+            handleStyle={{
+              backgroundColor: '#121517',
+              borderTopWidth: 2,
+              borderTopColor: '#313749',
+              zIndex: 100,
+            }}
+            handleIndicatorStyle={{ backgroundColor: '#313749' }}
+            backgroundStyle={{ backgroundColor: '#121517' }}>
+            <BottomSheetView>
+              <View className="p-4">
+                <View className="mb-4 flex-row items-center justify-between border-b border-secondary-850 pb-2">
+                  <Text className="text-xl font-semibold text-text">Filters & Sorting</Text>
+                  <Pressable onPress={() => bottomSheetRef.current?.close()}>
+                    <AntDesign name="close" size={24} color="#fff" />
+                  </Pressable>
+                </View>
+                <FilterContent />
+              </View>
+            </BottomSheetView>
+          </BottomSheet>
+        </BottomSheetModalProvider>
+      )}
       <View className="mb-4">
         {/* Search Input Bar */}
         <View className="bg-background-muted flex-row items-center rounded-lg p-1">
@@ -289,32 +316,6 @@ export default function SearchBar() {
           </Modal>
         )}
       </View>
-      {Platform.OS !== 'web' && (
-        <BottomSheet
-          ref={bottomSheetRef}
-          onChange={handleSheetChanges}
-          index={-1}
-          enablePanDownToClose
-          handleStyle={{
-            backgroundColor: '#121517',
-            borderTopWidth: 2,
-            borderTopColor: '#313749',
-          }}
-          handleIndicatorStyle={{ backgroundColor: '#313749' }}
-          backgroundStyle={{ backgroundColor: '#121517' }}>
-          <BottomSheetView>
-            <View className="p-4">
-              <View className="mb-4 flex-row items-center justify-between border-b border-secondary-850 pb-2">
-                <Text className="text-xl font-semibold text-text">Filters & Sorting</Text>
-                <Pressable onPress={() => bottomSheetRef.current?.close()}>
-                  <AntDesign name="close" size={24} color="#fff" />
-                </Pressable>
-              </View>
-              <FilterContent />
-            </View>
-          </BottomSheetView>
-        </BottomSheet>
-      )}
     </>
   );
 }
