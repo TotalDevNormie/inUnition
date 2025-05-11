@@ -433,7 +433,7 @@ export default function User() {
         <Pressable
           onPress={() => router.push('/login')}
           className="rounded-lg bg-primary px-6 py-3">
-          <Text className="font-medium text-text">Log In </Text>
+          <Text className="font-medium text-background">Log In </Text>
         </Pressable>
       </View>
     );
@@ -446,8 +446,8 @@ export default function User() {
           {/* Profile Header */}
           <View className="mb-8 flex flex-row items-center">
             <View className="mr-4 flex h-20 w-20 items-center justify-center rounded-full bg-primary/20">
-              <Text className="text-3xl font-bold text-primary">
-                {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}{' '}
+              <Text className="text-3xl font-bold text-primary text-center">
+                {user.displayName ? user.displayName.charAt(0).toUpperCase() : 'U'}
               </Text>
             </View>
             <View className="flex-1">
@@ -513,7 +513,7 @@ export default function User() {
                   <Pressable
                     onPress={handleUpdateUsername}
                     className="mt-3 rounded-lg bg-primary py-2">
-                    <Text className="text-center font-medium text-white">Update Username</Text>
+                    <Text className="text-center font-medium text-background">Update Username</Text>
                   </Pressable>
                 )}
 
